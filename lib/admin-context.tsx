@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useState } from "react"
+import { createContext, useContext, useState, useEffect } from "react"
 
 type AdminContextType = {
   isAdmin: boolean
@@ -11,8 +11,13 @@ type AdminContextType = {
 const AdminContext = createContext<AdminContextType | undefined>(undefined)
 
 export function AdminProvider({ children }: { children: React.ReactNode }) {
-  // In a real app, this would check if user is authenticated as admin
-  const [isAdmin, setIsAdmin] = useState(true)
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    // Check if admin is authenticated from localStorage
+    const adminAuthenticated = localStorage.getItem("adminAuthenticated")
+    setIsAdmin(adminAuthenticated === "true")
+  }, [])
 
   return <AdminContext.Provider value={{ isAdmin, setIsAdmin }}>{children}</AdminContext.Provider>
 }

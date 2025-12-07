@@ -2,20 +2,33 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { useCart } from "@/lib/cart-context"
-import { products } from "@/lib/products-data"
+import { useAuth } from "@/lib/auth-context"
+import { getProducts } from "@/lib/products-service"
+import { createOrder } from "@/lib/orders-service"
+import { applyCoupon, useCoupon, validateCoupon } from "@/lib/coupons-service"
 import { CartProvider } from "@/lib/cart-context"
-import { Check, ChevronLeft } from "lucide-react"
+import { Check, ChevronLeft, X } from "lucide-react"
 
 function CheckoutContent() {
   const router = useRouter()
   const { items, clearCart } = useCart()
+  const { user } = useAuth()
+  const [products, setProducts] = useState<any[]>([])
   const [orderPlaced, setOrderPlaced] = useState(false)
+  const [orderId, setOrderId] = useState<string>("")
+  const [orderNumber, setOrderNumber] = useState<string>("")
+  const [loading, setLoading] = useState(false)
+  const [couponCode, setCouponCode] = useState("")
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null)
+  const [couponError, setCouponError] = useState("")
+  const [applyingCoupon, setApplyingCoupon] = useState(false)
+  const [discount, setDiscount] = useState(0)
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -31,6 +44,11 @@ function CheckoutContent() {
     cardCVC: "",
   })
 
+  // Load products
+  useEffect(() => {
+    getProducts().then(setProducts)
+  }, [])
+
   const cartItems = items.map((item) => {
     const product = products.find((p) => p.id === item.productId)
     return { ...item, product }
@@ -42,20 +60,103 @@ function CheckoutContent() {
 
   const shipping = subtotal > 0 && subtotal < 100 ? 10 : 0
   const tax = subtotal * 0.1
-  const total = subtotal + shipping + tax
+  const total = subtotal + shipping + tax - discount
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponError("Please enter a coupon code")
+      return
+    }
+
+    setApplyingCoupon(true)
+    setCouponError("")
+
+    try {
+      const result = await applyCoupon(couponCode, subtotal + shipping)
+      if (result.success) {
+        const validation = await validateCoupon(couponCode, subtotal + shipping)
+        setAppliedCoupon(validation.coupon)
+        setDiscount(result.discount)
+        setCouponError("")
+      } else {
+        setCouponError(result.error || "Invalid coupon code")
+        setAppliedCoupon(null)
+        setDiscount(0)
+      }
+    } catch (error) {
+      console.error("Error applying coupon:", error)
+      setCouponError("Error applying coupon. Please try again.")
+      setAppliedCoupon(null)
+      setDiscount(0)
+    } finally {
+      setApplyingCoupon(false)
+    }
+  }
+
+  const handleRemoveCoupon = () => {
+    setCouponCode("")
+    setAppliedCoupon(null)
+    setDiscount(0)
+    setCouponError("")
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setLoading(true)
+    try {
+      const orderData = {
+        userId: user?.id || null,
+        items,
+        shippingInfo: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zipCode,
+        },
+        paymentInfo: {
+          cardName: formData.cardName,
+          cardNumber: formData.cardNumber,
+          cardExpiry: formData.cardExpiry,
+          cardCVC: formData.cardCVC,
+        },
+        subtotal,
+        shipping,
+        tax,
+        total,
+        couponCode: appliedCoupon?.code || null,
+        discount: discount,
+        status: "Pending" as const,
+      }
+      const result = await createOrder(orderData)
+      
+      // Mark coupon as used if applied
+      if (appliedCoupon?.code) {
+        try {
+          await useCoupon(appliedCoupon.code)
+        } catch (error) {
+          console.error("Error marking coupon as used:", error)
+        }
+      }
+      
+      setOrderId(result.id)
+      setOrderNumber(result.orderNumber)
     setOrderPlaced(true)
     clearCart()
-    setTimeout(() => {
-      router.push("/")
-    }, 3000)
+    } catch (error) {
+      console.error("Error creating order:", error)
+      alert("Failed to place order. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (items.length === 0 && !orderPlaced) {
@@ -91,20 +192,54 @@ function CheckoutContent() {
             <p className="text-muted-foreground text-lg">
               Thank you for your purchase. Your order has been placed successfully.
             </p>
-            <div className="bg-card border border-border rounded-lg p-8">
-              <p className="mb-4">
-                <span className="font-semibold">Order Number:</span>{" "}
-                <span className="text-accent">#{Math.random().toString(36).substr(2, 9).toUpperCase()}</span>
+            <div className="bg-card border border-border rounded-lg p-8 space-y-6">
+              <div className="bg-accent/10 border border-accent/20 rounded-lg p-6">
+                <p className="text-sm text-muted-foreground mb-2">Your Order Number</p>
+                <p className="text-3xl font-bold text-accent">{orderNumber}</p>
+                <p className="text-xs text-muted-foreground mt-2">Save this number to track your order</p>
+              </div>
+              
+              <div className="space-y-4">
+                {appliedCoupon && discount > 0 && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <p className="text-sm text-green-800 mb-1">
+                      <span className="font-semibold">Coupon Applied:</span> {appliedCoupon.code}
               </p>
-              <p className="mb-4">
-                <span className="font-semibold">Total Amount:</span>{" "}
+                    <p className="text-xs text-green-600">You saved ${discount.toFixed(2)}</p>
+                  </div>
+                )}
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold">Total Amount:</span>
                 <span className="text-2xl font-bold text-accent">${total.toFixed(2)}</span>
+                </div>
+                <div className="pt-4 border-t border-border">
+                  <p className="text-muted-foreground text-sm mb-4">
+                    A confirmation email has been sent to <span className="font-semibold text-foreground">{formData.email}</span>
               </p>
-              <p className="text-muted-foreground">
-                A confirmation email has been sent to <span className="font-semibold">{formData.email}</span>
-              </p>
+                  <Link
+                    href={`/orders?orderId=${orderNumber}`}
+                    className="inline-block bg-accent text-accent-foreground px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity"
+                  >
+                    Track Your Order
+                  </Link>
+                </div>
+              </div>
             </div>
-            <p className="text-sm text-muted-foreground">Redirecting to home page in 3 seconds...</p>
+            <div className="flex gap-4 justify-center">
+              <Link
+                href="/products"
+                className="text-accent hover:underline font-medium"
+              >
+                Continue Shopping
+              </Link>
+              <span className="text-muted-foreground">|</span>
+              <Link
+                href="/account"
+                className="text-accent hover:underline font-medium"
+              >
+                View My Orders
+              </Link>
+            </div>
           </div>
         </div>
         <Footer />
@@ -254,9 +389,10 @@ function CheckoutContent() {
 
               <button
                 type="submit"
-                className="w-full bg-accent text-accent-foreground py-4 rounded-lg font-semibold text-lg hover:opacity-90 transition-opacity"
+                disabled={loading}
+                className="w-full bg-accent text-accent-foreground py-4 rounded-lg font-semibold text-lg hover:opacity-90 transition-opacity disabled:opacity-50"
               >
-                Place Order
+                {loading ? "Placing Order..." : "Place Order"}
               </button>
             </form>
           </div>
@@ -265,6 +401,53 @@ function CheckoutContent() {
           <div className="lg:col-span-1">
             <div className="border border-border rounded-lg p-8 sticky top-24 space-y-6">
               <h2 className="text-xl font-bold">Order Summary</h2>
+
+              {/* Coupon Code Section */}
+              <div className="border border-border rounded-lg p-4 space-y-3">
+                <h3 className="font-semibold text-sm">Have a coupon code?</h3>
+                {!appliedCoupon ? (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Enter coupon code"
+                      value={couponCode}
+                      onChange={(e) => {
+                        setCouponCode(e.target.value.toUpperCase())
+                        setCouponError("")
+                      }}
+                      onKeyPress={(e) => e.key === "Enter" && handleApplyCoupon()}
+                      className="flex-1 px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApplyCoupon}
+                      disabled={applyingCoupon || !couponCode.trim()}
+                      className="bg-accent text-accent-foreground px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                    >
+                      {applyingCoupon ? "..." : "Apply"}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-3">
+                    <div>
+                      <p className="text-sm font-semibold text-green-800">{appliedCoupon.code}</p>
+                      <p className="text-xs text-green-600">
+                        {appliedCoupon.discountType === "percentage"
+                          ? `${appliedCoupon.discountValue}% off`
+                          : `$${appliedCoupon.discountValue} off`}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRemoveCoupon}
+                      className="p-1 hover:bg-green-100 rounded transition-colors"
+                    >
+                      <X className="w-4 h-4 text-green-600" />
+                    </button>
+                  </div>
+                )}
+                {couponError && <p className="text-xs text-red-600">{couponError}</p>}
+              </div>
 
               <div className="space-y-4 max-h-64 overflow-y-auto">
                 {cartItems.map((item) => (
@@ -288,6 +471,12 @@ function CheckoutContent() {
                   <span>Subtotal</span>
                   <span>${subtotal.toFixed(2)}</span>
                 </div>
+                {discount > 0 && (
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span>Discount</span>
+                    <span>-${discount.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
                   <span>Shipping</span>
                   <span>${shipping.toFixed(2)}</span>

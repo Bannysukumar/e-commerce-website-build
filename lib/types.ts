@@ -6,6 +6,7 @@ export type Product = {
   image: string
   category: string
   subcategory: string
+  gender?: "GIRLS" | "BOYS" | ""
   rating: number
   reviews: number
   inStock: boolean

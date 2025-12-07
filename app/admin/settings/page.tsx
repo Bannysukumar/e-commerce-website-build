@@ -3,13 +3,15 @@
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { AdminProvider } from "@/lib/admin-context"
 import { Bell, Lock, CreditCard, Store, Mail, Shield, Save } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { getAdminSettings, saveAdminSettings, type AdminSettings } from "@/lib/settings-service"
 
 function AdminSettingsContent() {
   const [activeTab, setActiveTab] = useState("store")
   const [saved, setSaved] = useState(false)
+  const [loading, setLoading] = useState(true)
 
-  const [settings, setSettings] = useState({
+  const [settings, setSettings] = useState<AdminSettings>({
     storeName: "swebirdshop",
     storeEmail: "admin@swebirdshop.com",
     storePhone: "+1 (555) 123-4567",
@@ -30,9 +32,30 @@ function AdminSettingsContent() {
     mailerServiceProvider: "sendgrid",
   })
 
-  const handleSave = () => {
+  useEffect(() => {
+    loadSettings()
+  }, [])
+
+  const loadSettings = async () => {
+    try {
+      const loadedSettings = await getAdminSettings()
+      setSettings(loadedSettings)
+      setLoading(false)
+    } catch (error) {
+      console.error("Error loading settings:", error)
+      setLoading(false)
+    }
+  }
+
+  const handleSave = async () => {
+    try {
+      await saveAdminSettings(settings)
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)
+    } catch (error) {
+      console.error("Error saving settings:", error)
+      alert("Failed to save settings. Please try again.")
+    }
   }
 
   const handleInputChange = (key: string, value: string | boolean) => {

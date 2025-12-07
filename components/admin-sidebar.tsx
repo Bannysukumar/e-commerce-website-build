@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutGrid, Package, ShoppingCart, Users, BarChart3, Settings, LogOut } from "lucide-react"
+import { LayoutGrid, Package, ShoppingCart, Users, BarChart3, Settings, LogOut, Image, Sparkles, MessageSquare, Layers, FolderTree, Mail, Ticket, Bell } from "lucide-react"
 
 export function AdminSidebar() {
   const pathname = usePathname()
@@ -10,8 +10,16 @@ export function AdminSidebar() {
   const menuItems = [
     { href: "/admin", icon: LayoutGrid, label: "Dashboard", exact: true },
     { href: "/admin/products", icon: Package, label: "Products" },
+    { href: "/admin/categories", icon: FolderTree, label: "Categories" },
+    { href: "/admin/coupons", icon: Ticket, label: "Coupons" },
     { href: "/admin/orders", icon: ShoppingCart, label: "Orders" },
     { href: "/admin/customers", icon: Users, label: "Customers" },
+    { href: "/admin/contact-messages", icon: Mail, label: "Contact Messages" },
+    { href: "/admin/newsletter", icon: Bell, label: "Newsletter" },
+    { href: "/admin/carousel", icon: Image, label: "Carousel" },
+    { href: "/admin/featured-products", icon: Sparkles, label: "Story Products" },
+    { href: "/admin/testimonials", icon: MessageSquare, label: "Testimonials" },
+    { href: "/admin/sections", icon: Layers, label: "Homepage Sections" },
     { href: "/admin/analytics", icon: BarChart3, label: "Analytics" },
     { href: "/admin/settings", icon: Settings, label: "Settings" },
   ]
@@ -47,9 +55,19 @@ export function AdminSidebar() {
         })}
       </nav>
 
-      <div className="absolute bottom-6 left-6">
-        <Link href="/" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-primary-foreground/10">
+      <div className="absolute bottom-6 left-6 right-6">
+        <button
+          onClick={() => {
+            localStorage.removeItem("adminAuthenticated")
+            localStorage.removeItem("adminUserId")
+            window.location.href = "/admin/login"
+          }}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-primary-foreground/10"
+        >
           <LogOut className="w-5 h-5" />
+          <span>Logout</span>
+        </button>
+        <Link href="/" className="mt-2 flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-primary-foreground/10">
           <span>Back to Store</span>
         </Link>
       </div>

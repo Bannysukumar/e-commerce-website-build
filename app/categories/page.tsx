@@ -1,15 +1,34 @@
 "use client"
 
 import Link from "next/link"
+import { useState, useEffect } from "react"
 import { ArrowRight } from "lucide-react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { products, categories } from "@/lib/products-data"
+import { subscribeToProducts, initializeProducts, type Product } from "@/lib/products-service"
+
+const categories = [
+  { id: "electronics", name: "Electronics", icon: "📱" },
+  { id: "fashion", name: "Fashion", icon: "👕" },
+  { id: "accessories", name: "Accessories", icon: "⌚" },
+  { id: "sports", name: "Sports", icon: "⚽" },
+]
 
 export default function CategoriesPage() {
+  const [products, setProducts] = useState<Product[]>([])
+
+  useEffect(() => {
+    initializeProducts().then(() => {
+      const unsubscribe = subscribeToProducts((productsList) => {
+        setProducts(productsList)
+      })
+      return () => unsubscribe()
+    })
+  }, [])
+
   const categoryStats = categories.map((cat) => ({
     ...cat,
-    count: products.filter((p) => p.category === cat.name).length,
+    count: products.filter((p) => p.category.toLowerCase() === cat.name.toLowerCase() || p.category.toLowerCase() === cat.id.toLowerCase()).length,
   }))
 
   return (
@@ -36,7 +55,7 @@ export default function CategoriesPage() {
           {categoryStats.map((cat) => (
             <Link
               key={cat.id}
-              href={`/products?category=${cat.name}`}
+              href={`/products?category=${cat.id}`}
               className="group relative overflow-hidden rounded border border-border bg-card hover:border-accent transition-all duration-300 hover:shadow-lg"
             >
               {/* Category Card */}

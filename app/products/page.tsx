@@ -1,12 +1,19 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ProductCard } from "@/components/product-card"
-import { products, categories } from "@/lib/products-data"
+import { subscribeToProducts, initializeProducts, type Product } from "@/lib/products-service"
 import { Search, Filter, ChevronDown } from "lucide-react"
+
+const categories = [
+  { id: "electronics", name: "Electronics", icon: "📱" },
+  { id: "fashion", name: "Fashion", icon: "👕" },
+  { id: "accessories", name: "Accessories", icon: "⌚" },
+  { id: "sports", name: "Sports", icon: "⚽" },
+]
 
 function ProductsContent() {
   const searchParams = useSearchParams()
@@ -16,6 +23,34 @@ function ProductsContent() {
   const [selectedRating, setSelectedRating] = useState<number>(0)
   const [sortBy, setSortBy] = useState("trending")
   const [filtersOpen, setFiltersOpen] = useState(true)
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    initializeProducts().then(() => {
+      const unsubscribe = subscribeToProducts((productsList) => {
+        setProducts(productsList)
+        setLoading(false)
+      })
+      return () => unsubscribe()
+    })
+  }, [])
+
+  // Sync category filter with URL parameter
+  useEffect(() => {
+    const categoryParam = searchParams.get("category")
+    if (categoryParam) {
+      setSelectedCategory(categoryParam)
+    }
+  }, [searchParams])
+
+  // Sync search term with URL parameter
+  useEffect(() => {
+    const searchParam = searchParams.get("search")
+    if (searchParam) {
+      setSearchTerm(searchParam)
+    }
+  }, [searchParams])
 
   const filteredProducts = useMemo(() => {
     let result = products
@@ -31,8 +66,17 @@ function ProductsContent() {
 
     // Category filter
     if (selectedCategory) {
-      result = result.filter((p) => p.category.toLowerCase() === selectedCategory.toLowerCase())
+      // Special handling for "boys" and "girls" - filter by gender field
+      if (selectedCategory.toLowerCase() === "boys") {
+        result = result.filter((p) => p.gender?.toUpperCase() === "BOYS")
+      } else if (selectedCategory.toLowerCase() === "girls") {
+        result = result.filter((p) => p.gender?.toUpperCase() === "GIRLS")
+      } else {
+        // For other categories, filter by category field
+        result = result.filter((p) => p.category.toLowerCase() === selectedCategory.toLowerCase())
+      }
     }
+    // If no category selected, show all products (no filtering applied)
 
     // Price filter
     result = result.filter((p) => p.price >= selectedPrice[0] && p.price <= selectedPrice[1])
@@ -232,7 +276,11 @@ function ProductsContent() {
               </div>
             </div>
 
-            {filteredProducts.length > 0 ? (
+            {loading ? (
+              <div className="text-center py-20">
+                <p className="text-muted-foreground font-light">Loading products...</p>
+              </div>
+            ) : filteredProducts.length > 0 ? (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {filteredProducts.map((product) => (
                   <ProductCard key={product.id} product={product} />

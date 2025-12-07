@@ -124,3 +124,22 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Auto-scrolling banner animation */
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-scroll {
+  animation: scroll 30s linear infinite;
+  display: inline-flex;
+}
+
+.animate-scroll:hover {
+  animation-play-state: paused;
+}

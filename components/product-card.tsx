@@ -1,9 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import { Star, Heart } from "lucide-react"
+import { Star, Heart, Plus } from "lucide-react"
 import type { Product } from "@/lib/types"
 import { useWishlist } from "@/lib/wishlist-context"
+import { useCart } from "@/lib/cart-context"
 
 type ProductCardProps = {
   product: Product
@@ -11,30 +12,30 @@ type ProductCardProps = {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist()
+  const { addToCart } = useCart()
   const inWishlist = isInWishlist(product.id)
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0
 
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    addToCart(product.id, 1)
+  }
+
   return (
+    <div className="group">
     <Link href={`/product/${product.id}`}>
-      <div className="group cursor-pointer">
-        <div className="relative mb-6 overflow-hidden rounded-lg bg-muted border border-border">
+        <div className="relative mb-3 overflow-hidden rounded-lg bg-gray-100 aspect-square">
           <img
             src={product.image || "/placeholder.svg"}
             alt={product.name}
-            className="w-full h-72 object-cover group-hover:scale-105 transition-transform duration-500"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
-          {discount > 0 && (
-            <div className="absolute top-4 right-4 bg-accent text-accent-foreground text-xs font-light px-4 py-2 rounded-full uppercase tracking-widest">
-              -{discount}%
-            </div>
-          )}
           <button
-            className={`absolute top-4 left-4 p-3 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 ${
-              inWishlist
-                ? "bg-accent text-accent-foreground"
-                : "bg-background border border-border text-foreground hover:border-accent"
+            className={`absolute top-3 left-3 p-2 rounded-full bg-white/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 ${
+              inWishlist ? "text-red-500" : "text-gray-700"
             }`}
             onClick={(e) => {
               e.preventDefault()
@@ -48,40 +49,36 @@ export function ProductCard({ product }: ProductCardProps) {
           >
             <Heart className={`w-5 h-5 ${inWishlist ? "fill-current" : ""}`} />
           </button>
+          <button
+            className="absolute bottom-3 right-3 p-2 rounded-full bg-white/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300"
+            onClick={handleAddToCart}
+          >
+            <Plus className="w-5 h-5 text-gray-700" />
+          </button>
         </div>
+      </Link>
 
-        <div className="space-y-3">
-          <p className="text-xs text-muted-foreground font-light uppercase tracking-widest">{product.category}</p>
-          <h3 className="font-light text-lg line-clamp-2 group-hover:text-accent transition-colors duration-300 text-foreground">
+      <div className="space-y-2">
+        <h3 className="font-medium text-sm text-gray-900 line-clamp-2 min-h-[40px]">
             {product.name}
           </h3>
 
-          <div className="flex items-center gap-3 pt-2">
-            <div className="flex items-center gap-1">
-              <Star className="w-4 h-4 fill-accent text-accent" />
-              <span className="text-sm font-light">{product.rating}</span>
-            </div>
-            <span className="text-xs text-muted-foreground font-light">({product.reviews})</span>
-          </div>
-
-          <div className="flex items-center gap-3 pt-3 border-t border-border">
-            <span className="font-light text-lg text-foreground">${product.price.toFixed(2)}</span>
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-gray-900">₹{product.price.toFixed(0)}</span>
             {product.originalPrice && (
-              <span className="text-xs text-muted-foreground line-through font-light">
-                ${product.originalPrice.toFixed(2)}
+            <span className="text-sm text-gray-500 line-through">
+              ₹{product.originalPrice.toFixed(0)}
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-2 pt-2">
-            {product.inStock ? (
-              <span className="text-xs text-green-700 font-light uppercase tracking-widest">In Stock</span>
-            ) : (
-              <span className="text-xs text-destructive font-light uppercase tracking-widest">Out of Stock</span>
-            )}
-          </div>
-        </div>
+        <button
+          onClick={handleAddToCart}
+          className="w-full bg-[#6B46C1] text-white px-4 py-2 rounded font-medium hover:opacity-90 transition-opacity text-sm"
+        >
+          ADD TO CART
+        </button>
       </div>
-    </Link>
+    </div>
   )
 }

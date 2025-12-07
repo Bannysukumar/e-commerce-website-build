@@ -1,54 +1,94 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { Package, ShoppingCart, Users, TrendingUp } from "lucide-react"
 import { AdminProvider } from "@/lib/admin-context"
+import { getDashboardStats } from "@/lib/admin-service"
 
 function AdminDashboardContent() {
-  const stats = [
+  const [stats, setStats] = useState([
     {
       label: "Total Sales",
-      value: "$45,231.89",
-      change: "+20.1%",
+      value: "$0.00",
+      change: "0%",
       icon: TrendingUp,
       color: "text-green-600",
     },
     {
       label: "Products",
-      value: "1,234",
-      change: "+12 this month",
+      value: "0",
+      change: "0 this month",
       icon: Package,
       color: "text-blue-600",
     },
     {
       label: "Orders",
-      value: "456",
-      change: "+45 today",
+      value: "0",
+      change: "0 today",
       icon: ShoppingCart,
       color: "text-amber-600",
     },
     {
       label: "Customers",
-      value: "892",
-      change: "+23 new",
+      value: "0",
+      change: "0 new",
       icon: Users,
       color: "text-purple-600",
     },
-  ]
+  ])
+  const [recentOrders, setRecentOrders] = useState<any[]>([])
+  const [topProducts, setTopProducts] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const recentOrders = [
-    { id: "ORD-001", customer: "John Doe", amount: "$199.99", status: "Delivered" },
-    { id: "ORD-002", customer: "Jane Smith", amount: "$89.99", status: "Processing" },
-    { id: "ORD-003", customer: "Bob Johnson", amount: "$349.99", status: "Shipped" },
-    { id: "ORD-004", customer: "Alice Brown", amount: "$129.99", status: "Pending" },
-  ]
+  useEffect(() => {
+    loadDashboardData()
+    // Refresh every 30 seconds
+    const interval = setInterval(loadDashboardData, 30000)
+    return () => clearInterval(interval)
+  }, [])
 
-  const topProducts = [
-    { name: "Premium Wireless Headphones", sales: 234, revenue: "$46,866" },
-    { name: "Classic Cotton T-Shirt", sales: 189, revenue: "$5,671" },
-    { name: "Minimalist Watch", sales: 156, revenue: "$23,374" },
-    { name: "Slim Fit Denim Jeans", sales: 142, revenue: "$11,359" },
-  ]
+  const loadDashboardData = async () => {
+    try {
+      const data = await getDashboardStats()
+      setStats([
+        {
+          label: "Total Sales",
+          value: data.totalSales,
+          change: "+0%",
+          icon: TrendingUp,
+          color: "text-green-600",
+        },
+        {
+          label: "Products",
+          value: data.totalProducts,
+          change: "0 this month",
+          icon: Package,
+          color: "text-blue-600",
+        },
+        {
+          label: "Orders",
+          value: data.totalOrders,
+          change: "0 today",
+          icon: ShoppingCart,
+          color: "text-amber-600",
+        },
+        {
+          label: "Customers",
+          value: data.totalCustomers,
+          change: "0 new",
+          icon: Users,
+          color: "text-purple-600",
+        },
+      ])
+      setRecentOrders(data.recentOrders)
+      setTopProducts(data.topProducts)
+      setLoading(false)
+    } catch (error) {
+      console.error("Error loading dashboard:", error)
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="flex bg-background">
@@ -80,7 +120,12 @@ function AdminDashboardContent() {
             <div className="bg-card border border-border rounded-lg p-6">
               <h2 className="text-xl font-bold mb-6">Recent Orders</h2>
               <div className="space-y-4">
-                {recentOrders.map((order) => (
+                {recentOrders.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground">No recent orders</p>
+                  </div>
+                ) : (
+                  recentOrders.map((order) => (
                   <div
                     key={order.id}
                     className="flex items-center justify-between pb-4 border-b border-border last:border-0"
@@ -104,7 +149,8 @@ function AdminDashboardContent() {
                       </p>
                     </div>
                   </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
 
@@ -112,7 +158,12 @@ function AdminDashboardContent() {
             <div className="bg-card border border-border rounded-lg p-6">
               <h2 className="text-xl font-bold mb-6">Top Products</h2>
               <div className="space-y-4">
-                {topProducts.map((product) => (
+                {topProducts.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground">No product data available</p>
+                  </div>
+                ) : (
+                  topProducts.map((product) => (
                   <div key={product.name} className="pb-4 border-b border-border last:border-0">
                     <p className="font-semibold line-clamp-1">{product.name}</p>
                     <div className="flex items-center justify-between mt-2">
@@ -120,7 +171,8 @@ function AdminDashboardContent() {
                       <span className="font-bold text-accent">{product.revenue}</span>
                     </div>
                   </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           </div>

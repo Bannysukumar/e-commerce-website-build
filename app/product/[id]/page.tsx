@@ -1,17 +1,38 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, use } from "react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { products } from "@/lib/products-data"
+import { getProductById, getProducts, type Product } from "@/lib/products-service"
 import { useCart } from "@/lib/cart-context"
 import { useWishlist } from "@/lib/wishlist-context"
 import { Star, Heart, ShoppingCart, Check, ChevronLeft, ChevronRight } from "lucide-react"
 import { CartProvider } from "@/lib/cart-context"
 import Link from "next/link"
 
-function ProductPageContent({ params }: { params: { id: string } }) {
-  const product = products.find((p) => p.id === params.id)
+function ProductPageContent({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params)
+  const [product, setProduct] = useState<Product | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([])
+
+  useEffect(() => {
+    if (resolvedParams.id) {
+      getProductById(resolvedParams.id).then((p) => {
+        setProduct(p)
+        setLoading(false)
+        // Load related products
+        if (p) {
+          getProducts().then((allProducts) => {
+            const related = allProducts.filter(
+              (prod) => prod.category === p.category && prod.id !== p.id
+            )
+            setRelatedProducts(related)
+          })
+        }
+      })
+    }
+  }, [resolvedParams.id])
   const { addToCart } = useCart()
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist()
   const [quantity, setQuantity] = useState(1)
@@ -20,6 +41,16 @@ function ProductPageContent({ params }: { params: { id: string } }) {
   const [addedToCart, setAddedToCart] = useState(false)
   const [imageIndex, setImageIndex] = useState(0)
   const inWishlist = product ? isInWishlist(product.id) : false
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground">Loading product...</p>
+        </div>
+      </div>
+    )
+  }
 
   if (!product) {
     return (
@@ -46,8 +77,6 @@ function ProductPageContent({ params }: { params: { id: string } }) {
   const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0
-
-  const relatedProducts = products.filter((p) => p.category === product.category && p.id !== product.id)
 
   return (
     <div className="min-h-screen bg-background">
@@ -279,7 +308,7 @@ function ProductPageContent({ params }: { params: { id: string } }) {
   )
 }
 
-export default function ProductPage({ params }: { params: { id: string } }) {
+export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   return (
     <CartProvider>
       <ProductPageContent params={params} />

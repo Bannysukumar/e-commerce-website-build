@@ -32,8 +32,20 @@ export default function LoginPage() {
 
       await login(email, password)
       router.push("/account")
-    } catch (err) {
-      setError("Login failed. Please try again.")
+    } catch (err: any) {
+      let errorMessage = "Login failed. Please try again."
+      if (err?.code === "auth/user-not-found") {
+        errorMessage = "No account found with this email."
+      } else if (err?.code === "auth/wrong-password") {
+        errorMessage = "Incorrect password."
+      } else if (err?.code === "auth/invalid-email") {
+        errorMessage = "Invalid email address."
+      } else if (err?.code === "auth/user-disabled") {
+        errorMessage = "This account has been disabled."
+      } else if (err?.message) {
+        errorMessage = err.message
+      }
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }

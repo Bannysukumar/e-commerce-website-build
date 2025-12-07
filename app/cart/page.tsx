@@ -1,15 +1,26 @@
 "use client"
 
 import Link from "next/link"
+import { useState, useEffect } from "react"
 import { Trash2, ShoppingBag } from "lucide-react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { useCart } from "@/lib/cart-context"
-import { products } from "@/lib/products-data"
+import { subscribeToProducts, initializeProducts, type Product } from "@/lib/products-service"
 import { CartProvider } from "@/lib/cart-context"
 
 function CartContent() {
   const { items, removeFromCart, updateQuantity } = useCart()
+  const [products, setProducts] = useState<Product[]>([])
+
+  useEffect(() => {
+    initializeProducts().then(() => {
+      const unsubscribe = subscribeToProducts((productsList) => {
+        setProducts(productsList)
+      })
+      return () => unsubscribe()
+    })
+  }, [])
 
   const cartItems = items.map((item) => {
     const product = products.find((p) => p.id === item.productId)

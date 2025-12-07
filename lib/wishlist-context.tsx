@@ -2,6 +2,9 @@
 
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
+import { doc, setDoc, onSnapshot } from "firebase/firestore"
+import { db } from "./firebase"
+import { useAuth } from "./auth-context"
 
 type WishlistContextType = {
   items: string[]
@@ -15,22 +18,44 @@ const WishlistContext = createContext<WishlistContextType | undefined>(undefined
 export function WishlistProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<string[]>([])
   const [mounted, setMounted] = useState(false)
+  const { user, isLoggedIn } = useAuth()
 
-  // Load wishlist from localStorage
+  // Get or create guest wishlist ID
+  const getGuestWishlistId = () => {
+    let guestWishlistId = localStorage.getItem("guestWishlistId")
+    if (!guestWishlistId) {
+      guestWishlistId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      localStorage.setItem("guestWishlistId", guestWishlistId)
+    }
+    return guestWishlistId
+  }
+
+  // Load wishlist from Firestore
   useEffect(() => {
-    const savedWishlist = localStorage.getItem("wishlist")
-    if (savedWishlist) {
-      setItems(JSON.parse(savedWishlist))
+    const wishlistId = isLoggedIn && user ? user.id : getGuestWishlistId()
+    const wishlistRef = doc(db, "wishlists", wishlistId)
+    const unsubscribe = onSnapshot(wishlistRef, (docSnapshot) => {
+      if (docSnapshot.exists()) {
+        const data = docSnapshot.data()
+        setItems(data.items || [])
+      } else {
+        setItems([])
     }
     setMounted(true)
-  }, [])
+    })
+    return () => unsubscribe()
+  }, [isLoggedIn, user])
 
-  // Save wishlist to localStorage
+  // Save wishlist to Firestore
   useEffect(() => {
     if (mounted) {
-      localStorage.setItem("wishlist", JSON.stringify(items))
+      const wishlistId = isLoggedIn && user ? user.id : getGuestWishlistId()
+      const wishlistRef = doc(db, "wishlists", wishlistId)
+      setDoc(wishlistRef, { items, userId: user?.id || null }, { merge: true }).catch((error) => {
+        console.error("Error saving wishlist to Firestore:", error)
+      })
     }
-  }, [items, mounted])
+  }, [items, mounted, isLoggedIn, user])
 
   const addToWishlist = (productId: string) => {
     setItems((prev) => (prev.includes(productId) ? prev : [...prev, productId]))

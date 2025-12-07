@@ -1,32 +1,46 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { AdminProvider } from "@/lib/admin-context"
+import { getAnalytics } from "@/lib/admin-service"
 import { TrendingUp, TrendingDown } from "lucide-react"
 
 function AnalyticsContent() {
-  const metrics = [
-    { label: "Revenue", value: "$45,231.89", change: "+20.1%", trend: "up" },
-    { label: "Orders", value: "456", change: "+15.3%", trend: "up" },
-    { label: "Customers", value: "892", change: "+8.2%", trend: "up" },
-    { label: "Avg. Order Value", value: "$99.19", change: "-2.5%", trend: "down" },
-  ]
+  const [metrics, setMetrics] = useState([
+    { label: "Revenue", value: "$0.00", change: "0%", trend: "up" as const },
+    { label: "Orders", value: "0", change: "0%", trend: "up" as const },
+    { label: "Customers", value: "0", change: "0%", trend: "up" as const },
+    { label: "Avg. Order Value", value: "$0.00", change: "0%", trend: "up" as const },
+  ])
+  const [sales, setSales] = useState<any[]>([])
+  const [categoryBreakdown, setCategoryBreakdown] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const sales = [
-    { month: "Jan", revenue: 35000 },
-    { month: "Feb", revenue: 38000 },
-    { month: "Mar", revenue: 42000 },
-    { month: "Apr", revenue: 39000 },
-    { month: "May", revenue: 45000 },
-    { month: "Jun", revenue: 52000 },
-  ]
+  useEffect(() => {
+    loadAnalytics()
+    // Refresh every 30 seconds
+    const interval = setInterval(loadAnalytics, 30000)
+    return () => clearInterval(interval)
+  }, [])
 
-  const categoryBreakdown = [
-    { category: "Fashion", percentage: 35, revenue: "$15,831" },
-    { category: "Electronics", percentage: 28, revenue: "$12,665" },
-    { category: "Accessories", percentage: 22, revenue: "$9,951" },
-    { category: "Sports", percentage: 15, revenue: "$6,785" },
-  ]
+  const loadAnalytics = async () => {
+    try {
+      const data = await getAnalytics()
+      setMetrics([
+        { label: "Revenue", value: data.revenue, change: "0%", trend: "up" as const },
+        { label: "Orders", value: data.orders, change: "0%", trend: "up" as const },
+        { label: "Customers", value: data.customers, change: "0%", trend: "up" as const },
+        { label: "Avg. Order Value", value: data.avgOrderValue, change: "0%", trend: "up" as const },
+      ])
+      setSales(data.sales)
+      setCategoryBreakdown(data.categoryBreakdown)
+      setLoading(false)
+    } catch (error) {
+      console.error("Error loading analytics:", error)
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="flex bg-background">
@@ -60,21 +74,34 @@ function AnalyticsContent() {
             <div className="bg-card border border-border rounded-lg p-6">
               <h2 className="text-xl font-bold mb-6">Revenue Trend</h2>
               <div className="space-y-4">
-                {sales.map((item) => (
-                  <div key={item.month} className="flex items-center gap-4">
-                    <span className="w-12 text-sm font-medium">{item.month}</span>
-                    <div className="flex-1 bg-muted rounded-full h-8">
-                      <div
-                        className="bg-accent rounded-full h-8 flex items-center justify-end pr-3 transition-all"
-                        style={{ width: `${(item.revenue / 52000) * 100}%` }}
-                      >
-                        <span className="text-xs font-bold text-accent-foreground">
-                          ${(item.revenue / 1000).toFixed(0)}k
-                        </span>
-                      </div>
-                    </div>
+                {loading ? (
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground">Loading revenue data...</p>
                   </div>
-                ))}
+                ) : sales.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground">No revenue data available</p>
+                  </div>
+                ) : (
+                  (() => {
+                    const maxRevenue = Math.max(...sales.map((s) => s.revenue), 1)
+                    return sales.map((item) => (
+                      <div key={item.month} className="flex items-center gap-4">
+                        <span className="w-12 text-sm font-medium">{item.month}</span>
+                        <div className="flex-1 bg-muted rounded-full h-8">
+                          <div
+                            className="bg-accent rounded-full h-8 flex items-center justify-end pr-3 transition-all"
+                            style={{ width: `${(item.revenue / maxRevenue) * 100}%` }}
+                          >
+                            <span className="text-xs font-bold text-accent-foreground">
+                              ${(item.revenue / 1000).toFixed(0)}k
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  })()
+                )}
               </div>
             </div>
 
@@ -82,7 +109,12 @@ function AnalyticsContent() {
             <div className="bg-card border border-border rounded-lg p-6">
               <h2 className="text-xl font-bold mb-6">Category Breakdown</h2>
               <div className="space-y-6">
-                {categoryBreakdown.map((item) => (
+                {categoryBreakdown.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground">No category data available</p>
+                  </div>
+                ) : (
+                  categoryBreakdown.map((item) => (
                   <div key={item.category}>
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-medium">{item.category}</span>
@@ -96,7 +128,8 @@ function AnalyticsContent() {
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">{item.percentage}% of revenue</p>
                   </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           </div>
