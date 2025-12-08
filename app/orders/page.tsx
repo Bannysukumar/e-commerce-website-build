@@ -2,14 +2,14 @@
 
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense, useCallback } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { getAllOrders } from "@/lib/orders-service"
 import { Package, Search, CheckCircle, Clock, XCircle } from "lucide-react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 
-export default function TrackOrderPage() {
+function TrackOrderContent() {
   const { user, isLoggedIn } = useAuth()
   const searchParams = useSearchParams()
   const [orderId, setOrderId] = useState("")
@@ -17,16 +17,7 @@ export default function TrackOrderPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
-  // Check for orderId in URL params
-  useEffect(() => {
-    const orderIdParam = searchParams.get("orderId")
-    if (orderIdParam) {
-      setOrderId(orderIdParam)
-      handleSearch(orderIdParam)
-    }
-  }, [searchParams])
-
-  const handleSearch = async (searchValue?: string) => {
+  const handleSearch = useCallback(async (searchValue?: string) => {
     const searchTerm = searchValue || orderId.trim()
     if (!searchTerm) {
       setError("Please enter an order number")
@@ -58,7 +49,16 @@ export default function TrackOrderPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [orderId])
+
+  // Check for orderId in URL params
+  useEffect(() => {
+    const orderIdParam = searchParams.get("orderId")
+    if (orderIdParam) {
+      setOrderId(orderIdParam)
+      handleSearch(orderIdParam)
+    }
+  }, [searchParams, handleSearch])
 
   const handleSearchClick = () => {
     handleSearch()
@@ -229,5 +229,24 @@ export default function TrackOrderPage() {
       </main>
       <Footer />
     </div>
+  )
+}
+
+export default function TrackOrderPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white">
+        <Header />
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center">
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Track Your Order</h1>
+            <p className="text-lg text-gray-600">Loading...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    }>
+      <TrackOrderContent />
+    </Suspense>
   )
 }
