@@ -2,16 +2,20 @@
 
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import { Trash2, ShoppingBag } from "lucide-react"
+import { Trash2, ShoppingBag, Plus, Minus } from "lucide-react"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { useCart } from "@/lib/cart-context"
 import { subscribeToProducts, initializeProducts, type Product } from "@/lib/products-service"
 import { CartProvider } from "@/lib/cart-context"
+import { CartToast } from "@/components/cart-toast"
 
 function CartContent() {
   const { items, removeFromCart, updateQuantity } = useCart()
   const [products, setProducts] = useState<Product[]>([])
+  const [toast, setToast] = useState<{ message: string; type?: "success" | "error" | "info" } | null>(null)
+  const [removingItem, setRemovingItem] = useState<string | null>(null)
+  const [updatingQuantity, setUpdatingQuantity] = useState<string | null>(null)
 
   useEffect(() => {
     initializeProducts().then(() => {
@@ -35,9 +39,36 @@ function CartContent() {
   const tax = subtotal * 0.1
   const total = subtotal + shipping + tax
 
+  const handleRemoveItem = async (productId: string) => {
+    setRemovingItem(productId)
+    setTimeout(() => {
+      removeFromCart(productId)
+      setToast({ message: "Item removed from cart", type: "success" })
+      setRemovingItem(null)
+    }, 300)
+  }
+
+  const handleQuantityChange = async (productId: string, newQuantity: number) => {
+    if (newQuantity < 1) {
+      handleRemoveItem(productId)
+      return
+    }
+    setUpdatingQuantity(productId)
+    updateQuantity(productId, newQuantity)
+    setToast({ message: "Quantity updated", type: "success" })
+    setTimeout(() => setUpdatingQuantity(null), 300)
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
+      {toast && (
+        <CartToast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <h1 className="text-4xl font-bold mb-12">Shopping Cart</h1>
@@ -60,11 +91,18 @@ function CartContent() {
             <div className="lg:col-span-2">
               <div className="space-y-4">
                 {cartItems.map((item) => (
-                  <div key={item.productId} className="flex gap-6 border border-border rounded-lg p-6">
+                  <div
+                    key={item.productId}
+                    className={`flex gap-6 border border-border rounded-lg p-6 transition-all duration-300 ${
+                      removingItem === item.productId
+                        ? "opacity-0 scale-95 -translate-x-4"
+                        : "opacity-100 scale-100 translate-x-0"
+                    } ${updatingQuantity === item.productId ? "ring-2 ring-accent ring-offset-2" : ""}`}
+                  >
                     <img
                       src={item.product?.image || "/placeholder.svg"}
                       alt={item.product?.name}
-                      className="w-24 h-24 object-cover rounded-lg"
+                      className="w-24 h-24 object-cover rounded-lg transition-transform duration-300 hover:scale-105"
                     />
                     <div className="flex-1">
                       <h3 className="font-semibold text-lg mb-2">{item.product?.name}</h3>
@@ -72,29 +110,33 @@ function CartContent() {
                         <p className="text-sm text-muted-foreground">Color: {item.selectedColor}</p>
                       )}
                       {item.selectedSize && <p className="text-sm text-muted-foreground">Size: {item.selectedSize}</p>}
-                      <p className="font-bold text-lg mt-2">
+                      <p className="font-bold text-lg mt-2 transition-all duration-300">
                         ₹{((item.product?.price || 0) * item.quantity).toFixed(2)}
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-4">
-                      <div className="flex items-center gap-3 border border-border rounded-lg p-1">
+                      <div className="flex items-center gap-2 border border-border rounded-lg overflow-hidden">
                         <button
-                          onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                          className="px-2 py-1 hover:bg-muted rounded"
+                          onClick={() => handleQuantityChange(item.productId, item.quantity - 1)}
+                          disabled={updatingQuantity === item.productId}
+                          className="px-3 py-2 hover:bg-muted rounded-l transition-all duration-200 hover:scale-110 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          −
+                          <Minus className="w-4 h-4" />
                         </button>
-                        <span className="w-8 text-center text-sm">{item.quantity}</span>
+                        <span className="w-12 text-center text-sm font-semibold transition-all duration-300">
+                          {item.quantity}
+                        </span>
                         <button
-                          onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                          className="px-2 py-1 hover:bg-muted rounded"
+                          onClick={() => handleQuantityChange(item.productId, item.quantity + 1)}
+                          disabled={updatingQuantity === item.productId}
+                          className="px-3 py-2 hover:bg-muted rounded-r transition-all duration-200 hover:scale-110 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          +
+                          <Plus className="w-4 h-4" />
                         </button>
                       </div>
                       <button
-                        onClick={() => removeFromCart(item.productId)}
-                        className="text-destructive hover:bg-destructive/10 p-2 rounded transition-colors"
+                        onClick={() => handleRemoveItem(item.productId)}
+                        className="text-destructive hover:bg-destructive/10 p-2 rounded transition-all duration-200 hover:scale-110 active:scale-95"
                       >
                         <Trash2 className="w-5 h-5" />
                       </button>
@@ -124,9 +166,9 @@ function CartContent() {
                   </div>
                 </div>
 
-                <div className="flex justify-between font-bold text-lg">
+                <div className="flex justify-between font-bold text-lg transition-all duration-300">
                   <span>Total</span>
-                  <span>₹{total.toFixed(2)}</span>
+                  <span className="transition-all duration-300">₹{total.toFixed(2)}</span>
                 </div>
 
                 <Link

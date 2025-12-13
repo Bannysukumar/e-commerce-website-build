@@ -6,6 +6,7 @@ import "./globals.css"
 import { CartProvider } from "@/lib/cart-context"
 import { WishlistProvider } from "@/lib/wishlist-context"
 import { AuthProvider } from "@/lib/auth-context"
+import { WhatsAppButton } from "@/components/whatsapp-button"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
@@ -44,7 +45,10 @@ export default function RootLayout({
       <body className={`font-sans antialiased`}>
         <AuthProvider>
           <CartProvider>
-            <WishlistProvider>{children}</WishlistProvider>
+            <WishlistProvider>
+              {children}
+              <WhatsAppButton />
+            </WishlistProvider>
           </CartProvider>
         </AuthProvider>
         <Analytics />

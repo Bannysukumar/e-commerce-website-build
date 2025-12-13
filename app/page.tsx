@@ -18,6 +18,8 @@ import { TestimonialsSection } from "@/components/testimonials-section"
 import { Plus } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { subscribeToSections, type HomepageSection } from "@/lib/sections-service"
+import { ScrollAnimation } from "@/components/scroll-animation"
+import { StaggeredGrid } from "@/components/staggered-grid"
 
 const shopCategories = [
   { id: "back-to-90s", name: "BACK TO 90s", image: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&q=80" },
@@ -204,11 +206,14 @@ function HomeContent() {
       </section>
 
       {/* TRENDING NOW - Category Section */}
-      <section className="py-16 px-4 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-sm font-normal text-gray-500 mb-2 uppercase">TRENDING NOW</h2>
-          </div>
+      <ScrollAnimation direction="slide-up" delay={0}>
+        <section className="py-16 px-4 bg-white">
+          <div className="max-w-7xl mx-auto">
+            <ScrollAnimation direction="fade" delay={100}>
+              <div className="text-center mb-12">
+                <h2 className="text-sm font-normal text-gray-500 mb-2 uppercase">TRENDING NOW</h2>
+              </div>
+            </ScrollAnimation>
           <div className="overflow-x-auto pb-4">
             <div className="flex gap-6 min-w-max">
               {shopCategories.map((category, index) => {
@@ -239,23 +244,28 @@ function HomeContent() {
           </div>
         </div>
       </section>
+      </ScrollAnimation>
 
       {/* Our Stories Section */}
       {storyProducts.length > 0 && (
-        <section className="py-16 px-4 bg-white">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-sm font-normal text-gray-500">STORIES</h2>
-            </div>
-            <div className="overflow-x-auto pb-4">
-              <div className="flex gap-4 min-w-max">
-                {storyProducts.map(({ product, tagline, videoUrl }) => (
-                  <StoryProductCard key={product.id} product={product} tagline={tagline} videoUrl={videoUrl} />
-                ))}
+        <ScrollAnimation direction="slide-up" delay={0}>
+          <section className="py-16 px-4 bg-white">
+            <div className="max-w-7xl mx-auto">
+              <ScrollAnimation direction="fade" delay={100}>
+                <div className="text-center mb-12">
+                  <h2 className="text-sm font-normal text-gray-500">STORIES</h2>
+                </div>
+              </ScrollAnimation>
+              <div className="overflow-x-auto pb-4">
+                <div className="flex gap-4 min-w-max">
+                  {storyProducts.map(({ product, tagline, videoUrl }) => (
+                    <StoryProductCard key={product.id} product={product} tagline={tagline} videoUrl={videoUrl} />
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </ScrollAnimation>
       )}
 
       {/* Dynamic Product Sections */}
@@ -282,11 +292,15 @@ function HomeContent() {
                     </div>
                   )}
                   {section.layout === "grid" ? (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <StaggeredGrid
+                      className="grid grid-cols-2 md:grid-cols-4 gap-6"
+                      staggerDelay={100}
+                      direction="slide-up"
+                    >
                       {sectionProducts.map((product) => (
                         <ProductCard key={product.id} product={product} />
                       ))}
-                    </div>
+                    </StaggeredGrid>
                   ) : section.layout === "horizontal-scroll" ? (
                     <div className="overflow-x-auto pb-4">
                       <div className="flex gap-4 min-w-max">
@@ -298,11 +312,15 @@ function HomeContent() {
                       </div>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <StaggeredGrid
+                      className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+                      staggerDelay={100}
+                      direction="slide-up"
+                    >
                       {sectionProducts.map((product) => (
                         <ProductCard key={product.id} product={product} />
                       ))}
-                    </div>
+                    </StaggeredGrid>
                   )}
                 </div>
               </section>
@@ -527,7 +545,9 @@ function HomeContent() {
       )}
 
       {/* Testimonials Section */}
-      <TestimonialsSection />
+      <ScrollAnimation direction="slide-up" delay={0}>
+        <TestimonialsSection />
+      </ScrollAnimation>
 
       {/* WHY SHOP WITH US Section */}
       <section className="py-16 px-4 bg-white">
@@ -630,120 +650,46 @@ function HomeContent() {
         </div>
       </section>
 
-      {/* Government Trust Section */}
-      <section className="py-12 px-4 bg-white border-y border-gray-200">
-        <div className="max-w-7xl mx-auto text-center">
-          <div className="flex flex-col items-center gap-4">
-            <img
-              src="https://salty.co.in/cdn/shop/files/TRUSTED_BY_GOVERNMENT_OF_INDIA_3.png?crop=center&height=149&v=1689235711&width=800"
-              alt="Trusted by Government of India"
-              srcSet="https://salty.co.in/cdn/shop/files/TRUSTED_BY_GOVERNMENT_OF_INDIA_3.png?crop=center&height=65&v=1689235711&width=352 352w, https://salty.co.in/cdn/shop/files/TRUSTED_BY_GOVERNMENT_OF_INDIA_3.png?crop=center&height=149&v=1689235711&width=800 800w"
-              width="800"
-              height="149"
-              loading="lazy"
-              className="max-w-full h-auto"
-            />
-            <p className="text-xs text-gray-600 max-w-md font-medium">
-              MINISTRY OF ELECTRONICS & INFORMATION TECHNOLOGY GOVERNMENT OF INDIA
-            </p>
+      {/* Products Display Section */}
+      <ScrollAnimation direction="slide-up" delay={0}>
+        <section className="py-16 px-4 bg-white">
+          <div className="max-w-7xl mx-auto">
+            <ScrollAnimation direction="fade" delay={100}>
+              <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">
+                Featured Products
+              </h3>
+            </ScrollAnimation>
+            {loading ? (
+              <div className="text-center py-12 text-gray-500">Loading products...</div>
+            ) : products.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">No products available</div>
+            ) : (
+              <StaggeredGrid
+                className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
+                staggerDelay={100}
+                direction="slide-up"
+              >
+                {products.slice(0, 8).map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </StaggeredGrid>
+            )}
+            {products.length > 8 && (
+              <ScrollAnimation direction="fade" delay={800}>
+                <div className="text-center mt-8">
+                  <Link
+                    href="/products"
+                    className="inline-block bg-[#6B46C1] text-white px-8 py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity"
+                  >
+                    View All Products
+                  </Link>
+                </div>
+              </ScrollAnimation>
+            )}
           </div>
-        </div>
-      </section>
+        </section>
+      </ScrollAnimation>
 
-      {/* Brand Introduction Section */}
-      <section className="py-16 px-4 bg-white">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
-              SHOP FASHION ACCESSORIES FOR WOMEN AT swebirdshop
-            </h2>
-          </div>
-          <div className="space-y-6 text-gray-700 text-base leading-relaxed">
-            <p>
-              Welcome to swebirdshop, India's fastest-growing fashion accessories brand.
-            </p>
-            <p>
-              As your go-to destination for fashion accessories, we have made over 1 Million stylish customers happy and cool over the past two years, establishing ourselves as a trusted name in trendy accessories for women.
-            </p>
-            <p>
-              Whether you're looking for the latest in jewelry, accessories, or fashion extras, Salty has it all. Our expansive catalog ensures that every piece you purchase gives you an edge above the rest. Explore our collection of women's fashion accessories online curated for every occasion & need to complete your look. It is how all our happy customers find their perfect style companion at Salty.
-            </p>
-            <h3 className="text-2xl font-bold text-gray-900 mt-8 mb-4">
-              BEST FASHION JEWELLERY BRAND IN INDIA
-            </h3>
-            <p>
-              Experience the finest fashion jewellery and accessories brand in India, swebirdshop. Hands down, we are the best website for women's jewellery online. Our selection includes chic, affordable fashion jewellery that suit any occasion, from timeless classics to contemporary pieces. We ensure our jewellery and fashion accessories for women meet the varied tastes and preferences of our customers.
-            </p>
-            <p>
-              We are proud to share that our brand has been supported and funded by the Government of India. Which underscores the quality of our fashion accessories and jewellery.
-            </p>
-            <p>
-              At swebirdshop, we specialize in crafting high-quality jewellery and accessories for both women and men. Our extensive collection features a wide range of designs, ensuring there's something for everyone. From timeless classics to modern pieces, we provide jewellery for women that appeal to various tastes and preferences.
-            </p>
-            <p>
-              Customer satisfaction is our top priority, which is why we offer a hassle-free return and exchange policy within 7 days of purchase. Additionally, our faster delivery options ensures you receive your order as quickly as the same day in select major cities, allowing you to enjoy your new fashion jewellery and accessories without delay.
-            </p>
-            <p>
-              Shop with us today and step up your style with our one-of-a-kind jewellery and accessory pieces.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQs Section */}
-      <section className="py-16 px-4 bg-white">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-[#212121] mb-2 uppercase" style={{ fontFamily: 'sans-serif' }}>
-              FREQUENTLY ASKED QUESTIONS
-            </h2>
-          </div>
-          <Accordion type="single" collapsible className="w-full space-y-6">
-            {[
-              {
-                question: "How should we store our jewelry to maintain its shine?",
-                answer: "To maintain the shine of your jewelry, store each piece separately in a soft cloth pouch or jewelry box with individual compartments. Keep them away from direct sunlight and moisture. Clean them regularly with a soft, lint-free cloth. Avoid storing different metals together as they can scratch each other."
-              },
-              {
-                question: "Things to keep in mind while buying jewelry online?",
-                answer: "When buying jewelry online, always check the return policy, read customer reviews, verify the seller's authenticity, check product images from multiple angles, understand the sizing guide, and ensure secure payment methods. Look for detailed product descriptions including materials, dimensions, and care instructions."
-              },
-              {
-                question: "Is cash on delivery available?",
-                answer: "Yes, we offer cash on delivery (COD) for orders above ₹44. Free standard delivery is available for orders above ₹1500. COD orders are subject to verification and may have certain restrictions based on location."
-              },
-              {
-                question: "How to choose a perfect ring?",
-                answer: "To choose the perfect ring, consider your style preferences, finger size (use our size guide), the occasion, metal type (gold, silver, platinum), gemstone preferences, and budget. We offer a size guide and virtual try-on features to help you choose the perfect ring. Consider the ring's width and comfort for daily wear."
-              },
-              {
-                question: "What is the return policy?",
-                answer: "We offer a 30-day return policy from the date of delivery. Items must be unused, in original packaging, and with proof of purchase. Some items like personalized or custom-made jewelry may be excluded from returns. Please contact our customer service for assistance with returns and exchanges."
-              },
-            ].map((faq, index) => (
-              <AccordionItem key={index} value={`item-${index}`} className="border-none">
-                <AccordionTrigger className="hover:no-underline py-0 [&>svg]:hidden">
-                  <div className="w-full flex items-center gap-4 text-left group">
-                    <div className="w-8 h-8 rounded-full bg-[#F5F5F5] flex items-center justify-center flex-shrink-0 group-data-[state=open]:bg-[#E0E0E0] transition-colors">
-                      <ChevronDown className="w-4 h-4 text-[#424242] transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                    </div>
-                    <span className="text-base font-normal text-[#424242] flex-1" style={{ fontFamily: 'sans-serif' }}>
-                      {faq.question}
-                    </span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="pt-4 pb-0">
-                  <div className="pl-12">
-                    <p className="text-base font-normal text-[#424242] leading-relaxed" style={{ fontFamily: 'sans-serif' }}>
-                      {faq.answer}
-                    </p>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </div>
-      </section>
 
       <Footer />
     </div>

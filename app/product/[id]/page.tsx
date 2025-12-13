@@ -9,6 +9,8 @@ import { useWishlist } from "@/lib/wishlist-context"
 import { Star, Heart, ShoppingCart, Check, ChevronLeft, ChevronRight } from "lucide-react"
 import { CartProvider } from "@/lib/cart-context"
 import Link from "next/link"
+import { ScrollAnimation } from "@/components/scroll-animation"
+import { StaggeredGrid } from "@/components/staggered-grid"
 
 function ProductPageContent({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
@@ -274,13 +276,20 @@ function ProductPageContent({ params }: { params: Promise<{ id: string }> }) {
 
         {/* Related Products */}
         {relatedProducts.length > 0 && (
-          <section className="border-t border-border pt-20">
-            <div className="mb-16">
-              <p className="text-accent text-sm font-light tracking-widest uppercase mb-4">You May Also Like</p>
-              <h2 className="text-4xl font-serif font-light text-foreground">Related Products</h2>
-            </div>
-            <div className="grid md:grid-cols-3 gap-8">
-              {relatedProducts.slice(0, 3).map((p) => (
+          <ScrollAnimation direction="slide-up" delay={0}>
+            <section className="border-t border-border pt-20">
+              <ScrollAnimation direction="fade" delay={100}>
+                <div className="mb-16">
+                  <p className="text-accent text-sm font-light tracking-widest uppercase mb-4">You May Also Like</p>
+                  <h2 className="text-4xl font-serif font-light text-foreground">Related Products</h2>
+                </div>
+              </ScrollAnimation>
+              <StaggeredGrid
+                className="grid md:grid-cols-3 gap-8"
+                staggerDelay={150}
+                direction="slide-up"
+              >
+                {relatedProducts.slice(0, 3).map((p) => (
                 <Link key={p.id} href={`/product/${p.id}`} className="group">
                   <div className="rounded border border-border overflow-hidden mb-6 hover:border-accent transition-all">
                     <img
@@ -297,9 +306,10 @@ function ProductPageContent({ params }: { params: Promise<{ id: string }> }) {
                   </h3>
                   <p className="text-accent font-light text-lg">₹{p.price.toFixed(2)}</p>
                 </Link>
-              ))}
-            </div>
-          </section>
+                ))}
+              </StaggeredGrid>
+            </section>
+          </ScrollAnimation>
         )}
       </div>
 

@@ -320,14 +320,6 @@ export function Footer() {
       </div>
 
       {/* Chat Icon - Fixed Bottom Right */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <button 
-          className="w-14 h-14 bg-[#6B46C1] text-white rounded-full shadow-xl flex items-center justify-center hover:scale-110 hover:shadow-2xl transition-all"
-          aria-label="Chat with us"
-        >
-          <MessageCircle className="w-6 h-6" />
-        </button>
-      </div>
     </footer>
   )
 }

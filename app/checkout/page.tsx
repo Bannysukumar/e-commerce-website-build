@@ -14,6 +14,8 @@ import { createOrder } from "@/lib/orders-service"
 import { applyCoupon, useCoupon, validateCoupon } from "@/lib/coupons-service"
 import { CartProvider } from "@/lib/cart-context"
 import { Check, ChevronLeft, X } from "lucide-react"
+import { CheckoutProgress } from "@/components/checkout-progress"
+import { CartToast } from "@/components/cart-toast"
 
 function CheckoutContent() {
   const router = useRouter()
@@ -29,6 +31,8 @@ function CheckoutContent() {
   const [couponError, setCouponError] = useState("")
   const [applyingCoupon, setApplyingCoupon] = useState(false)
   const [discount, setDiscount] = useState(0)
+  const [currentStep, setCurrentStep] = useState(1)
+  const [toast, setToast] = useState<{ message: string; type?: "success" | "error" | "info" } | null>(null)
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -83,10 +87,12 @@ function CheckoutContent() {
         setAppliedCoupon(validation.coupon)
         setDiscount(result.discount)
         setCouponError("")
+        setToast({ message: "Coupon applied successfully!", type: "success" })
       } else {
         setCouponError(result.error || "Invalid coupon code")
         setAppliedCoupon(null)
         setDiscount(0)
+        setToast({ message: result.error || "Invalid coupon code", type: "error" })
       }
     } catch (error) {
       console.error("Error applying coupon:", error)
@@ -107,6 +113,7 @@ function CheckoutContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setCurrentStep(3)
     setLoading(true)
     try {
       const orderData = {
@@ -149,8 +156,9 @@ function CheckoutContent() {
       
       setOrderId(result.id)
       setOrderNumber(result.orderNumber)
-    setOrderPlaced(true)
-    clearCart()
+      setOrderPlaced(true)
+      clearCart()
+      setToast({ message: "Order placed successfully!", type: "success" })
     } catch (error) {
       console.error("Error creating order:", error)
       alert("Failed to place order. Please try again.")
@@ -259,12 +267,27 @@ function CheckoutContent() {
 
         <h1 className="text-4xl font-bold mb-12">Checkout</h1>
 
+        <CheckoutProgress currentStep={currentStep} />
+
+        {toast && (
+          <CartToast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
+        )}
+
         <div className="grid lg:grid-cols-3 gap-12">
           {/* Checkout Form */}
           <div className="lg:col-span-2">
             <form onSubmit={handleSubmit} className="space-y-8">
               {/* Shipping Information */}
-              <div className="border border-border rounded-lg p-8">
+              <div
+                className={`border border-border rounded-lg p-8 transition-all duration-500 ${
+                  currentStep >= 1 ? "opacity-100 translate-y-0" : "opacity-50"
+                }`}
+                onFocus={() => setCurrentStep(1)}
+              >
                 <h2 className="text-2xl font-bold mb-6">Shipping Information</h2>
                 <div className="grid md:grid-cols-2 gap-4">
                   <input
@@ -343,7 +366,16 @@ function CheckoutContent() {
               </div>
 
               {/* Payment Information */}
-              <div className="border border-border rounded-lg p-8">
+              <div
+                className={`border border-border rounded-lg p-8 transition-all duration-500 ${
+                  currentStep >= 2 ? "opacity-100 translate-y-0" : "opacity-50"
+                }`}
+                onFocus={() => {
+                  if (formData.firstName && formData.email && formData.address) {
+                    setCurrentStep(2)
+                  }
+                }}
+              >
                 <h2 className="text-2xl font-bold mb-6">Payment Information</h2>
                 <div className="space-y-4">
                   <input
@@ -390,16 +422,23 @@ function CheckoutContent() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-accent text-accent-foreground py-4 rounded-lg font-semibold text-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+                className="w-full bg-accent text-accent-foreground py-4 rounded-lg font-semibold text-lg hover:opacity-90 transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
               >
-                {loading ? "Placing Order..." : "Place Order"}
+                {loading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-accent-foreground border-t-transparent rounded-full animate-spin" />
+                    Placing Order...
+                  </>
+                ) : (
+                  "Place Order"
+                )}
               </button>
             </form>
           </div>
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <div className="border border-border rounded-lg p-8 sticky top-24 space-y-6">
+            <div className="border border-border rounded-lg p-8 sticky top-24 space-y-6 transition-all duration-300">
               <h2 className="text-xl font-bold">Order Summary</h2>
 
               {/* Coupon Code Section */}
@@ -467,27 +506,27 @@ function CheckoutContent() {
               </div>
 
               <div className="space-y-3 border-t border-border pt-6">
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-sm transition-all duration-300">
                   <span>Subtotal</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span className="transition-all duration-300">₹{subtotal.toFixed(2)}</span>
                 </div>
                 {discount > 0 && (
-                  <div className="flex justify-between text-sm text-green-600">
+                  <div className="flex justify-between text-sm text-green-600 transition-all duration-300 animate-in slide-in-from-top">
                     <span>Discount</span>
                     <span>-₹{discount.toFixed(2)}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-sm transition-all duration-300">
                   <span>Shipping</span>
-                  <span>₹{shipping.toFixed(2)}</span>
+                  <span className="transition-all duration-300">₹{shipping.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-sm transition-all duration-300">
                   <span>Tax</span>
-                  <span>₹{tax.toFixed(2)}</span>
+                  <span className="transition-all duration-300">₹{tax.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between font-bold text-lg border-t border-border pt-3">
+                <div className="flex justify-between font-bold text-lg border-t border-border pt-3 transition-all duration-300">
                   <span>Total</span>
-                  <span>₹{total.toFixed(2)}</span>
+                  <span className="transition-all duration-300 text-accent">₹{total.toFixed(2)}</span>
                 </div>
               </div>
             </div>

@@ -7,6 +7,8 @@ import { Footer } from "@/components/footer"
 import { ProductCard } from "@/components/product-card"
 import { subscribeToProducts, initializeProducts, type Product } from "@/lib/products-service"
 import { Search, Filter, ChevronDown } from "lucide-react"
+import { StaggeredGrid } from "@/components/staggered-grid"
+import { ScrollAnimation } from "@/components/scroll-animation"
 
 const categories = [
   { id: "electronics", name: "Electronics", icon: "📱" },
@@ -277,21 +279,29 @@ function ProductsContent() {
             </div>
 
             {loading ? (
-              <div className="text-center py-20">
-                <p className="text-muted-foreground font-light">Loading products...</p>
-              </div>
+              <ScrollAnimation direction="fade">
+                <div className="text-center py-20">
+                  <p className="text-muted-foreground font-light">Loading products...</p>
+                </div>
+              </ScrollAnimation>
             ) : filteredProducts.length > 0 ? (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <StaggeredGrid
+                className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+                staggerDelay={80}
+                direction="slide-up"
+              >
                 {filteredProducts.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
-              </div>
+              </StaggeredGrid>
             ) : (
-              <div className="text-center py-20">
-                <Filter className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" />
-                <h2 className="text-2xl font-serif font-light mb-2 text-foreground">No products found</h2>
-                <p className="text-muted-foreground font-light">Try adjusting your filters or search terms</p>
-              </div>
+              <ScrollAnimation direction="fade">
+                <div className="text-center py-20">
+                  <Filter className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+                  <h2 className="text-2xl font-serif font-light mb-2 text-foreground">No products found</h2>
+                  <p className="text-muted-foreground font-light">Try adjusting your filters or search terms</p>
+                </div>
+              </ScrollAnimation>
             )}
           </div>
         </div>

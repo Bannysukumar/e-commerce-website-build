@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Star } from "lucide-react"
 import { subscribeToTestimonials, type Testimonial } from "@/lib/testimonials-service"
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel"
+import { ScrollAnimation } from "@/components/scroll-animation"
 
 export function TestimonialsSection() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([])
@@ -36,14 +37,17 @@ export function TestimonialsSection() {
   const displayTestimonials = testimonials.slice(0, 7) // Show up to 7 for pagination
 
   return (
-    <section className="py-16 px-4 bg-[#E9DFFF]">
-      <div className="max-w-7xl mx-auto">
-        {/* Section Title */}
-        <div className="text-center mb-12">
-          <h2 className="text-sm font-normal text-gray-500 uppercase mb-2" style={{ fontFamily: 'sans-serif' }}>
-            WHAT OUR CLIENTS SAY
-          </h2>
-        </div>
+    <ScrollAnimation direction="slide-up" delay={0}>
+      <section className="py-16 px-4 bg-[#E9DFFF]">
+        <div className="max-w-7xl mx-auto">
+          {/* Section Title */}
+          <ScrollAnimation direction="fade" delay={100}>
+            <div className="text-center mb-12">
+              <h2 className="text-sm font-normal text-gray-500 uppercase mb-2" style={{ fontFamily: 'sans-serif' }}>
+                WHAT OUR CLIENTS SAY
+              </h2>
+            </div>
+          </ScrollAnimation>
 
         {/* Testimonials Carousel */}
         <Carousel
@@ -115,5 +119,6 @@ export function TestimonialsSection() {
         )}
       </div>
     </section>
+    </ScrollAnimation>
   )
 }

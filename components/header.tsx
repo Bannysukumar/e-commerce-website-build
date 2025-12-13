@@ -23,7 +23,6 @@ export function Header() {
   const router = useRouter()
 
   const categories = [
-    { id: "jewellery", name: "JEWELLERY", hasDropdown: true },
     { id: "gifts", name: "GIFTS", hasDropdown: false },
     { id: "new", name: "NEW", hasDropdown: false },
     { id: "shades", name: "SHADES", hasDropdown: true },
@@ -182,20 +181,20 @@ export function Header() {
             <div className="flex-1 flex items-center justify-end gap-4">
               <Link
                 href="/account?tab=wishlist"
-                className="relative hover:opacity-80 transition-opacity text-white"
+                className="relative hover:opacity-80 transition-all duration-300 hover:scale-110 active:scale-95 text-white"
               >
-                <Heart className="w-5 h-5" />
-                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
+                <Heart className="w-5 h-5 transition-transform duration-300" />
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold transition-all duration-300">
                   {wishlistItems.length || 0}
                 </span>
               </Link>
-              <Link href="/account" className="hover:opacity-80 transition-opacity text-white">
-                <User className="w-5 h-5" />
+              <Link href="/account" className="hover:opacity-80 transition-all duration-300 hover:scale-110 active:scale-95 text-white">
+                <User className="w-5 h-5 transition-transform duration-300" />
               </Link>
-              <Link href="/cart" className="relative hover:opacity-80 transition-opacity text-white">
-                <ShoppingCart className="w-5 h-5" />
+              <Link href="/cart" className="relative hover:opacity-80 transition-all duration-300 hover:scale-110 active:scale-95 text-white">
+                <ShoppingCart className="w-5 h-5 transition-transform duration-300" />
                 {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold transition-all duration-300 animate-pulse">
                     {cartCount}
                   </span>
                 )}
@@ -209,13 +208,13 @@ export function Header() {
               <div key={category.id} className="relative group">
                 <Link
                   href={`/products?category=${category.id}`}
-                  className="text-sm font-normal uppercase tracking-wider hover:opacity-80 transition-opacity flex items-center gap-1 text-white"
+                  className="text-sm font-normal uppercase tracking-wider hover:opacity-80 transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-1 text-white"
                   style={{ fontFamily: 'sans-serif' }}
                   onMouseEnter={() => category.hasDropdown && setCategoryDropdowns((prev) => ({ ...prev, [category.id]: true }))}
                   onMouseLeave={() => category.hasDropdown && setCategoryDropdowns((prev) => ({ ...prev, [category.id]: false }))}
                 >
                   {category.name}
-                  {category.hasDropdown && <ChevronDown className="w-4 h-4" />}
+                  {category.hasDropdown && <ChevronDown className="w-4 h-4 transition-transform duration-300" />}
           </Link>
                 {category.hasDropdown && categoryDropdowns[category.id] && (
                   <div
@@ -299,19 +298,12 @@ export function Header() {
           </nav>
 
             {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center justify-between pb-4 border-t border-white/20 pt-4">
+          <div className="md:hidden flex items-center justify-start pb-4 border-t border-white/20 pt-4">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 hover:opacity-80 transition-opacity text-white"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-            <button
-              onClick={handleSearchClick}
-              className="p-2 hover:opacity-80 transition-opacity text-white"
-              aria-label="Search"
-            >
-              <Search className="w-6 h-6" />
             </button>
           </div>
         </div>
