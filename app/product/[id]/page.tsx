@@ -146,11 +146,11 @@ function ProductPageContent({ params }: { params: Promise<{ id: string }> }) {
               {/* Pricing */}
               <div className="mb-8 space-y-4">
                 <div className="flex items-center gap-4">
-                  <span className="text-5xl font-light text-foreground">${product.price.toFixed(2)}</span>
+                  <span className="text-5xl font-light text-foreground">₹{product.price.toFixed(2)}</span>
                   {product.originalPrice && (
                     <>
                       <span className="text-xl text-muted-foreground line-through font-light">
-                        ${product.originalPrice.toFixed(2)}
+                        ₹{product.originalPrice.toFixed(2)}
                       </span>
                       <span className="bg-accent text-accent-foreground px-4 py-2 rounded text-sm font-light uppercase tracking-widest">
                         Save {discount}%
@@ -295,7 +295,7 @@ function ProductPageContent({ params }: { params: Promise<{ id: string }> }) {
                   <h3 className="font-light text-lg text-foreground group-hover:text-accent transition-colors mb-3 line-clamp-2">
                     {p.name}
                   </h3>
-                  <p className="text-accent font-light text-lg">${p.price.toFixed(2)}</p>
+                  <p className="text-accent font-light text-lg">₹{p.price.toFixed(2)}</p>
                 </Link>
               ))}
             </div>

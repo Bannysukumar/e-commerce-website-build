@@ -8,10 +8,10 @@ import { TrendingUp, TrendingDown } from "lucide-react"
 
 function AnalyticsContent() {
   const [metrics, setMetrics] = useState([
-    { label: "Revenue", value: "$0.00", change: "0%", trend: "up" as const },
+    { label: "Revenue", value: "₹0.00", change: "0%", trend: "up" as const },
     { label: "Orders", value: "0", change: "0%", trend: "up" as const },
     { label: "Customers", value: "0", change: "0%", trend: "up" as const },
-    { label: "Avg. Order Value", value: "$0.00", change: "0%", trend: "up" as const },
+    { label: "Avg. Order Value", value: "₹0.00", change: "0%", trend: "up" as const },
   ])
   const [sales, setSales] = useState<any[]>([])
   const [categoryBreakdown, setCategoryBreakdown] = useState<any[]>([])

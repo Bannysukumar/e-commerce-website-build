@@ -17,12 +17,12 @@ export default function ShippingPolicyPage() {
           <div className="space-y-4">
             <div className="p-4 border border-muted rounded-lg">
               <h3 className="font-semibold text-foreground mb-2">Standard Shipping</h3>
-              <p className="text-foreground/90">5-7 business days | $5.99</p>
+              <p className="text-foreground/90">5-7 business days | ₹5.99</p>
               <p className="text-sm text-foreground/70">Perfect for budget-conscious customers</p>
             </div>
             <div className="p-4 border border-muted rounded-lg">
               <h3 className="font-semibold text-foreground mb-2">Express Shipping</h3>
-              <p className="text-foreground/90">2-3 business days | $14.99</p>
+              <p className="text-foreground/90">2-3 business days | ₹14.99</p>
               <p className="text-sm text-foreground/70">Faster delivery for urgent needs</p>
             </div>
             <div className="p-4 border border-muted rounded-lg">
@@ -33,7 +33,7 @@ export default function ShippingPolicyPage() {
             <div className="p-4 border border-muted rounded-lg">
               <h3 className="font-semibold text-foreground mb-2">Free Shipping</h3>
               <p className="text-foreground/90">5-7 business days</p>
-              <p className="text-sm text-foreground/70">On orders over $50 (Standard Shipping only)</p>
+              <p className="text-sm text-foreground/70">On orders over ₹50 (Standard Shipping only)</p>
             </div>
           </div>
         </section>

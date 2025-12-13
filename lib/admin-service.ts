@@ -27,7 +27,7 @@ export async function getDashboardStats() {
       .map((order) => ({
         id: order.id,
         customer: `${order.shippingInfo.firstName} ${order.shippingInfo.lastName}`,
-        amount: `$${order.total.toFixed(2)}`,
+        amount: `₹${order.total.toFixed(2)}`,
         status: order.status,
       }))
 
@@ -70,7 +70,7 @@ export async function getDashboardStats() {
   } catch (error) {
     console.error("Error fetching dashboard stats:", error)
     return {
-      totalSales: "$0.00",
+      totalSales: "₹0.00",
       totalOrders: "0",
       totalProducts: "0",
       totalCustomers: "0",
@@ -121,10 +121,10 @@ export async function getAnalytics() {
 
     if (orders.length === 0) {
       return {
-        revenue: "$0.00",
+        revenue: "₹0.00",
         orders: "0",
         customers: "0",
-        avgOrderValue: "$0.00",
+        avgOrderValue: "₹0.00",
         sales: [],
         categoryBreakdown: [],
       }
@@ -175,25 +175,25 @@ export async function getAnalytics() {
       .map(([category, revenue]) => ({
         category,
         percentage: totalCategoryRevenue > 0 ? Math.round((revenue / totalCategoryRevenue) * 100) : 0,
-        revenue: `$${revenue.toFixed(2)}`,
+        revenue: `₹${revenue.toFixed(2)}`,
       }))
       .sort((a, b) => b.percentage - a.percentage)
 
     return {
-      revenue: `$${totalRevenue.toFixed(2)}`,
+      revenue: `₹${totalRevenue.toFixed(2)}`,
       orders: totalOrders.toString(),
       customers: uniqueCustomers.toString(),
-      avgOrderValue: `$${avgOrderValue.toFixed(2)}`,
+      avgOrderValue: `₹${avgOrderValue.toFixed(2)}`,
       sales,
       categoryBreakdown,
     }
   } catch (error) {
     console.error("Error fetching analytics:", error)
     return {
-      revenue: "$0.00",
+      revenue: "₹0.00",
       orders: "0",
       customers: "0",
-      avgOrderValue: "$0.00",
+      avgOrderValue: "₹0.00",
       sales: [],
       categoryBreakdown: [],
     }

@@ -6,7 +6,7 @@ import { subscribeToProducts, saveProduct, deleteProduct, initializeProducts, ty
 import { subscribeToCategories, initializeCategories, type Category } from "@/lib/categories-service"
 import { AdminProvider } from "@/lib/admin-context"
 import { createNotification } from "@/lib/newsletter-service"
-import { Plus, Edit, Trash2, Search } from "lucide-react"
+import { Plus, Edit, Trash2, Search, X } from "lucide-react"
 
 function ProductsManagementContent() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -24,10 +24,11 @@ function ProductsManagementContent() {
     gender: "",
     description: "",
     image: "",
-    images: "",
+    images: [] as string[],
     inStock: true,
   })
   const [sendNotification, setSendNotification] = useState(false)
+  const [additionalImageUrl, setAdditionalImageUrl] = useState("")
 
   // Initialize products and categories on first load
   useEffect(() => {
@@ -59,10 +60,8 @@ function ProductsManagementContent() {
       return
     }
 
-    // Parse multiple images from comma-separated string
-    const imagesArray = formData.images
-      ? formData.images.split(",").map((url) => url.trim()).filter((url) => url.length > 0)
-      : []
+    // Filter out empty image URLs
+    const imagesArray = formData.images.filter((url) => url.trim().length > 0)
 
     const product: any = {
       id: editingProduct?.id || `product_${Date.now()}`,
@@ -123,9 +122,10 @@ function ProductsManagementContent() {
         gender: "",
         description: "",
         image: "",
-        images: "",
+        images: [],
         inStock: true,
       })
+      setAdditionalImageUrl("")
     } catch (error) {
       console.error("Error saving product:", error)
       alert("Failed to save product")
@@ -155,10 +155,28 @@ function ProductsManagementContent() {
       gender: product.gender || "",
       description: product.description,
       image: product.image || "",
-      images: product.images && product.images.length > 0 ? product.images.join(", ") : "",
+      images: product.images && product.images.length > 0 ? product.images : [],
       inStock: product.inStock,
     })
+    setAdditionalImageUrl("")
     setShowModal(true)
+  }
+
+  const handleAddImageUrl = () => {
+    if (additionalImageUrl.trim()) {
+      setFormData({
+        ...formData,
+        images: [...formData.images, additionalImageUrl.trim()],
+      })
+      setAdditionalImageUrl("")
+    }
+  }
+
+  const handleRemoveImageUrl = (index: number) => {
+    setFormData({
+      ...formData,
+      images: formData.images.filter((_, i) => i !== index),
+    })
   }
 
   return (
@@ -173,6 +191,7 @@ function ProductsManagementContent() {
               onClick={() => {
                 setEditingProduct(null)
                 setSendNotification(false)
+                setAdditionalImageUrl("")
                 setFormData({
                   name: "",
                   price: "",
@@ -182,7 +201,7 @@ function ProductsManagementContent() {
                   gender: "",
                   description: "",
                   image: "",
-                  images: "",
+                  images: [],
                   inStock: true,
                 })
                 setShowModal(true)
@@ -245,7 +264,7 @@ function ProductsManagementContent() {
                           </div>
                         </td>
                         <td className="px-6 py-4 text-muted-foreground">{product.category}</td>
-                        <td className="px-6 py-4 font-bold">${product.price.toFixed(2)}</td>
+                        <td className="px-6 py-4 font-bold">₹{product.price.toFixed(2)}</td>
                         <td className="px-6 py-4">
                           <span
                             className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -323,14 +342,55 @@ function ProductsManagementContent() {
                         <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
                       </div>
                     )}
-                    <input
-                      type="text"
-                      placeholder="Additional Images (comma-separated URLs, optional)"
-                      value={formData.images}
-                      onChange={(e) => setFormData({ ...formData, images: e.target.value })}
-                      className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                    />
-                    <p className="text-xs text-muted-foreground">Enter multiple image URLs separated by commas</p>
+                    <div className="space-y-3">
+                      <label className="block text-sm font-medium">Additional Images (Optional)</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Enter image URL"
+                          value={additionalImageUrl}
+                          onChange={(e) => setAdditionalImageUrl(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault()
+                              handleAddImageUrl()
+                            }
+                          }}
+                          className="flex-1 px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddImageUrl}
+                          className="px-6 py-3 bg-accent text-accent-foreground rounded-lg hover:opacity-90 transition-opacity font-semibold whitespace-nowrap"
+                        >
+                          Add URL
+                        </button>
+                      </div>
+                      {formData.images.length > 0 && (
+                        <div className="space-y-2 mt-3">
+                          {formData.images.map((url, index) => (
+                            <div key={index} className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm text-muted-foreground truncate">{url}</p>
+                                {url && (
+                                  <div className="relative h-16 rounded overflow-hidden border border-border mt-2">
+                                    <img src={url} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
+                                  </div>
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveImageUrl(index)}
+                                className="p-2 hover:bg-destructive/10 rounded transition-colors text-destructive"
+                                aria-label="Remove image"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     <select
                       value={formData.category}
                       onChange={(e) => setFormData({ ...formData, category: e.target.value })}
@@ -394,6 +454,7 @@ function ProductsManagementContent() {
                         setShowModal(false)
                         setEditingProduct(null)
                         setSendNotification(false)
+                        setAdditionalImageUrl("")
                       setFormData({
                         name: "",
                         price: "",
@@ -403,7 +464,7 @@ function ProductsManagementContent() {
                         gender: "",
                         description: "",
                         image: "",
-                        images: "",
+                        images: [],
                         inStock: true,
                       })
                       }}

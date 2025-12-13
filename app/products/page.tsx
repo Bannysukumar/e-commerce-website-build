@@ -111,10 +111,10 @@ function ProductsContent() {
   }, [searchTerm, selectedCategory, selectedPrice, selectedRating, sortBy])
 
   const priceRanges = [
-    { label: "Under $50", min: 0, max: 50 },
-    { label: "$50 - $100", min: 50, max: 100 },
-    { label: "$100 - $200", min: 100, max: 200 },
-    { label: "Over $200", min: 200, max: 500 },
+    { label: "Under ₹50", min: 0, max: 50 },
+    { label: "₹50 - ₹100", min: 50, max: 100 },
+    { label: "₹100 - ₹200", min: 100, max: 200 },
+    { label: "Over ₹200", min: 200, max: 500 },
   ]
 
   return (

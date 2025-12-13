@@ -195,13 +195,13 @@ function CouponsManagementContent() {
                     required
                   >
                     <option value="percentage">Percentage (%)</option>
-                    <option value="fixed">Fixed Amount ($)</option>
+                    <option value="fixed">Fixed Amount (₹)</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-1">
-                    Discount Value * ({formData.discountType === "percentage" ? "Percentage" : "Amount in $"})
+                    Discount Value * ({formData.discountType === "percentage" ? "Percentage" : "Amount in ₹"})
                   </label>
                   <input
                     type="number"
@@ -230,7 +230,7 @@ function CouponsManagementContent() {
                 )}
 
                 <div>
-                  <label className="block text-sm font-medium mb-1">Minimum Purchase Amount ($) - Optional</label>
+                  <label className="block text-sm font-medium mb-1">Minimum Purchase Amount (₹) - Optional</label>
                   <input
                     type="number"
                     value={formData.minPurchaseAmount || 0}
@@ -353,10 +353,10 @@ function CouponsManagementContent() {
                         {coupon.discountType === "percentage" ? (
                           <span className="font-semibold">{coupon.discountValue}%</span>
                         ) : (
-                          <span className="font-semibold">${coupon.discountValue.toFixed(2)}</span>
+                          <span className="font-semibold">₹{coupon.discountValue.toFixed(2)}</span>
                         )}
                         {coupon.minPurchaseAmount && (
-                          <p className="text-xs text-muted-foreground">Min: ${coupon.minPurchaseAmount}</p>
+                          <p className="text-xs text-muted-foreground">Min: ₹{coupon.minPurchaseAmount}</p>
                         )}
                       </td>
                       <td className="px-6 py-4">

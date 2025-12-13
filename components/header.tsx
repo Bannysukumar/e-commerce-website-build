@@ -164,8 +164,8 @@ export function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Top Row: Search (Left), Brand Name (Center), Utility Icons (Right) */}
           <div className="flex items-center justify-between py-4">
-            {/* Search Icon - Left */}
-            <div className="flex-1 flex items-center">
+            {/* Search Icon - Left (Desktop Only) */}
+            <div className="flex-1 flex items-center hidden md:flex">
               <button
                 onClick={handleSearchClick}
                 className="hover:opacity-80 transition-opacity text-white"
@@ -347,14 +347,6 @@ export function Header() {
               ref={searchModalRef}
               className="w-full max-w-4xl bg-white rounded-lg shadow-2xl relative"
             >
-              {/* Close Button */}
-              <button
-                onClick={handleSearchClose}
-                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition-colors z-10"
-                aria-label="Close search"
-              >
-                <X className="w-6 h-6" />
-              </button>
 
               {/* Search Input */}
               <form onSubmit={handleSearchSubmit} className="p-6 border-b border-gray-200">
@@ -365,10 +357,9 @@ export function Header() {
                     placeholder="Search For Brace"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-4 pr-12 py-4 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#6B46C1] focus:border-transparent transition-all"
+                    className="w-full pl-4 pr-4 py-4 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#6B46C1] focus:border-transparent transition-all"
                     autoFocus
                   />
-                  <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 </div>
               </form>
 

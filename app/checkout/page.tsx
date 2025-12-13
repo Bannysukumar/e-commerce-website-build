@@ -205,12 +205,12 @@ function CheckoutContent() {
                     <p className="text-sm text-green-800 mb-1">
                       <span className="font-semibold">Coupon Applied:</span> {appliedCoupon.code}
               </p>
-                    <p className="text-xs text-green-600">You saved ${discount.toFixed(2)}</p>
+                    <p className="text-xs text-green-600">You saved ₹{discount.toFixed(2)}</p>
                   </div>
                 )}
                 <div className="flex justify-between items-center">
                   <span className="font-semibold">Total Amount:</span>
-                <span className="text-2xl font-bold text-accent">${total.toFixed(2)}</span>
+                <span className="text-2xl font-bold text-accent">₹{total.toFixed(2)}</span>
                 </div>
                 <div className="pt-4 border-t border-border">
                   <p className="text-muted-foreground text-sm mb-4">
@@ -434,7 +434,7 @@ function CheckoutContent() {
                       <p className="text-xs text-green-600">
                         {appliedCoupon.discountType === "percentage"
                           ? `${appliedCoupon.discountValue}% off`
-                          : `$${appliedCoupon.discountValue} off`}
+                          : `₹${appliedCoupon.discountValue} off`}
                       </p>
                     </div>
                     <button
@@ -460,7 +460,7 @@ function CheckoutContent() {
                     <div className="flex-1 text-sm">
                       <p className="font-semibold">{item.product?.name}</p>
                       <p className="text-muted-foreground">Qty: {item.quantity}</p>
-                      <p className="font-bold">${((item.product?.price || 0) * item.quantity).toFixed(2)}</p>
+                      <p className="font-bold">₹{((item.product?.price || 0) * item.quantity).toFixed(2)}</p>
                     </div>
                   </div>
                 ))}
@@ -474,20 +474,20 @@ function CheckoutContent() {
                 {discount > 0 && (
                   <div className="flex justify-between text-sm text-green-600">
                     <span>Discount</span>
-                    <span>-${discount.toFixed(2)}</span>
+                    <span>-₹{discount.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
                   <span>Shipping</span>
-                  <span>${shipping.toFixed(2)}</span>
+                  <span>₹{shipping.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Tax</span>
-                  <span>${tax.toFixed(2)}</span>
+                  <span>₹{tax.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between font-bold text-lg border-t border-border pt-3">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>₹{total.toFixed(2)}</span>
                 </div>
               </div>
             </div>

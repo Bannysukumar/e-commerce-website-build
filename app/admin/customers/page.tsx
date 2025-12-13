@@ -253,7 +253,7 @@ function CustomersManagementContent() {
                                       </p>
                                     </div>
                                     <div className="text-right">
-                                      <p className="font-semibold text-accent">${order.total.toFixed(2)}</p>
+                                      <p className="font-semibold text-accent">₹{order.total.toFixed(2)}</p>
                                       <span
                                         className={`text-xs px-2 py-1 rounded ${
                                           order.status === "Delivered"

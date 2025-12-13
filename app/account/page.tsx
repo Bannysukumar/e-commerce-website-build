@@ -334,7 +334,7 @@ function AccountContent() {
                         <p className="text-sm text-muted-foreground">{order.items.length} items</p>
                     </div>
                     <div className="text-right">
-                        <p className="font-bold text-lg">${order.total.toFixed(2)}</p>
+                        <p className="font-bold text-lg">₹{order.total.toFixed(2)}</p>
                       <p
                         className={`text-sm font-medium ${
                             order.status === "Delivered"

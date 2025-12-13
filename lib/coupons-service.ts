@@ -103,7 +103,7 @@ export async function validateCoupon(code: string, cartTotal: number): Promise<{
     }
     
     if (coupon.minPurchaseAmount && cartTotal < coupon.minPurchaseAmount) {
-      return { valid: false, error: `Minimum purchase amount of $${coupon.minPurchaseAmount} required` }
+      return { valid: false, error: `Minimum purchase amount of ₹${coupon.minPurchaseAmount} required` }
     }
     
     return { valid: true, coupon }

@@ -10,7 +10,7 @@ function AdminDashboardContent() {
   const [stats, setStats] = useState([
     {
       label: "Total Sales",
-      value: "$0.00",
+      value: "₹0.00",
       change: "0%",
       icon: TrendingUp,
       color: "text-green-600",

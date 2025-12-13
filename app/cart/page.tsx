@@ -73,7 +73,7 @@ function CartContent() {
                       )}
                       {item.selectedSize && <p className="text-sm text-muted-foreground">Size: {item.selectedSize}</p>}
                       <p className="font-bold text-lg mt-2">
-                        ${((item.product?.price || 0) * item.quantity).toFixed(2)}
+                        ₹{((item.product?.price || 0) * item.quantity).toFixed(2)}
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-4">
@@ -112,21 +112,21 @@ function CartContent() {
                 <div className="space-y-3 border-b border-border pb-6">
                   <div className="flex justify-between text-sm">
                     <span>Subtotal</span>
-                    <span>${subtotal.toFixed(2)}</span>
+                    <span>₹{subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Shipping</span>
-                    <span>${shipping.toFixed(2)}</span>
+                    <span>₹{shipping.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Tax</span>
-                    <span>${tax.toFixed(2)}</span>
+                    <span>₹{tax.toFixed(2)}</span>
                   </div>
                 </div>
 
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>₹{total.toFixed(2)}</span>
                 </div>
 
                 <Link

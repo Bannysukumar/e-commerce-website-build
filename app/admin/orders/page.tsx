@@ -141,7 +141,7 @@ function OrdersManagementContent() {
                         <td className="px-6 py-4 text-muted-foreground">
                           {order.createdAt.toLocaleDateString()}
                         </td>
-                        <td className="px-6 py-4 font-bold">${order.total.toFixed(2)}</td>
+                        <td className="px-6 py-4 font-bold">₹{order.total.toFixed(2)}</td>
                     <td className="px-6 py-4">
                           <select
                             value={order.status}
@@ -301,7 +301,7 @@ function OrdersManagementContent() {
                                   )}
                                   {product && (
                                     <p className="font-semibold text-accent mt-2">
-                                      ${(product.price * item.quantity).toFixed(2)}
+                                      ₹{(product.price * item.quantity).toFixed(2)}
                                     </p>
                                   )}
                                 </div>
@@ -343,25 +343,25 @@ function OrdersManagementContent() {
                           <div className="bg-muted/50 rounded-lg p-4 space-y-3">
                             <div className="flex justify-between text-sm">
                               <span className="text-muted-foreground">Subtotal:</span>
-                              <span className="font-medium">${selectedOrder.subtotal.toFixed(2)}</span>
+                              <span className="font-medium">₹{selectedOrder.subtotal.toFixed(2)}</span>
                             </div>
                             {selectedOrder.discount && selectedOrder.discount > 0 && (
                               <div className="flex justify-between text-sm text-green-600">
                                 <span>Discount ({selectedOrder.couponCode}):</span>
-                                <span className="font-medium">-${selectedOrder.discount.toFixed(2)}</span>
+                                <span className="font-medium">-₹{selectedOrder.discount.toFixed(2)}</span>
                               </div>
                             )}
                             <div className="flex justify-between text-sm">
                               <span className="text-muted-foreground">Shipping:</span>
-                              <span className="font-medium">${selectedOrder.shipping.toFixed(2)}</span>
+                              <span className="font-medium">₹{selectedOrder.shipping.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between text-sm">
                               <span className="text-muted-foreground">Tax:</span>
-                              <span className="font-medium">${selectedOrder.tax.toFixed(2)}</span>
+                              <span className="font-medium">₹{selectedOrder.tax.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between font-bold text-lg border-t border-border pt-3">
                               <span>Total:</span>
-                              <span className="text-accent">${selectedOrder.total.toFixed(2)}</span>
+                              <span className="text-accent">₹{selectedOrder.total.toFixed(2)}</span>
                             </div>
                           </div>
                         </div>
