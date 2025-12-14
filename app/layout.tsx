@@ -10,7 +10,6 @@ import { WhatsAppButton } from "@/components/whatsapp-button"
 
 // Force dynamic rendering to prevent static page caching
 export const dynamic = 'force-dynamic'
-export const revalidate = 0
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
