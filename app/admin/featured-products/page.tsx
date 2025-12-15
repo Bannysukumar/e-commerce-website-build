@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react"
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { AdminProvider } from "@/lib/admin-context"
-import { Plus, Edit, Trash2, ArrowUp, ArrowDown, X } from "lucide-react"
+import { Plus, Edit, Trash2, ArrowUp, ArrowDown, X, Upload, Loader2 } from "lucide-react"
+import { uploadVideo, isVideoFile } from "@/lib/storage-service"
 import {
   getFeaturedProducts,
   saveFeaturedProduct,
@@ -26,6 +27,9 @@ function FeaturedProductsManagementContent() {
     order: 0,
     isActive: true,
   })
+  const [videoFile, setVideoFile] = useState<File | null>(null)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [isUploading, setIsUploading] = useState(false)
 
   useEffect(() => {
     // Load all products
@@ -44,6 +48,8 @@ function FeaturedProductsManagementContent() {
   const handleOpenModal = (featured?: FeaturedProduct) => {
     if (featured) {
       setEditingFeatured(featured)
+      setVideoFile(null)
+      setUploadProgress(0)
       setFormData({
         productId: featured.productId,
         tagline: featured.tagline || "",
@@ -53,6 +59,8 @@ function FeaturedProductsManagementContent() {
       })
     } else {
       setEditingFeatured(null)
+      setVideoFile(null)
+      setUploadProgress(0)
       setFormData({
         productId: "",
         tagline: "",
@@ -67,6 +75,8 @@ function FeaturedProductsManagementContent() {
   const handleCloseModal = () => {
     setShowModal(false)
     setEditingFeatured(null)
+    setVideoFile(null)
+    setUploadProgress(0)
     setFormData({
       productId: "",
       tagline: "",
@@ -82,15 +92,49 @@ function FeaturedProductsManagementContent() {
       return
     }
 
+    setIsUploading(true)
+    setUploadProgress(0)
+
     try {
+      let videoUrl = formData.videoUrl
+
+      // Upload video if a file is selected
+      if (videoFile) {
+        if (!isVideoFile(videoFile)) {
+          alert("Please select a video file")
+          setIsUploading(false)
+          return
+        }
+        videoUrl = await uploadVideo(videoFile, "featured", undefined, (progress) => {
+          setUploadProgress(progress)
+        })
+      }
+
       await saveFeaturedProduct({
         id: editingFeatured?.id,
         ...formData,
+        videoUrl,
       })
       handleCloseModal()
     } catch (error) {
       console.error("Error saving featured product:", error)
       alert("Failed to save. Please try again.")
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  const handleVideoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (!isVideoFile(file)) {
+        alert("Please select a video file")
+        return
+      }
+      setVideoFile(file)
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file)
+      setFormData({ ...formData, videoUrl: previewUrl })
     }
   }
 
@@ -320,18 +364,37 @@ function FeaturedProductsManagementContent() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Video URL (Optional)</label>
-                <input
-                  type="url"
-                  value={formData.videoUrl}
-                  onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
-                  placeholder="https://example.com/video.mp4 or YouTube/Vimeo embed URL"
-                  className="w-full px-4 py-2 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
-                />
+                <label className="block text-sm font-medium text-foreground mb-2">Video (Optional)</label>
+                <div className="space-y-2">
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="video/*"
+                      onChange={handleVideoFileChange}
+                      className="hidden"
+                    />
+                    <div className="w-full px-4 py-2 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors flex items-center justify-center gap-2 cursor-pointer">
+                      <Upload className="w-5 h-5" />
+                      <span>{videoFile ? videoFile.name : "Choose Video from Gallery"}</span>
+                    </div>
+                  </label>
+                  {videoFile && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setVideoFile(null)
+                        setFormData({ ...formData, videoUrl: "" })
+                      }}
+                      className="text-sm text-destructive hover:underline"
+                    >
+                      Remove video
+                    </button>
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Enter video URL to display video instead of image. Video will auto-play when scrolled into view.
+                  Upload a video to display instead of the product image. Video will auto-play when scrolled into view.
                   <br />
-                  Supported: Direct video URLs (.mp4, .webm, .mov) or YouTube/Vimeo embed URLs
+                  Supported formats: MP4, WebM, MOV
                 </p>
               </div>
 
@@ -395,13 +458,22 @@ function FeaturedProductsManagementContent() {
               <div className="flex gap-4 pt-4">
                 <button
                   onClick={handleSave}
-                  className="flex-1 bg-accent text-accent-foreground px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
+                  disabled={isUploading}
+                  className="flex-1 bg-accent text-accent-foreground px-4 py-2 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  {editingFeatured ? "Update" : "Add Product"}
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Uploading... {Math.round(uploadProgress)}%</span>
+                    </>
+                  ) : (
+                    editingFeatured ? "Update" : "Add Product"
+                  )}
                 </button>
                 <button
                   onClick={handleCloseModal}
-                  className="px-4 py-2 border border-border rounded-lg hover:bg-muted transition-colors"
+                  disabled={isUploading}
+                  className="px-4 py-2 border border-border rounded-lg hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>

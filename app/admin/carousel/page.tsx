@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react"
 import { AdminSidebar } from "@/components/admin-sidebar"
 import { AdminProvider } from "@/lib/admin-context"
-import { Plus, Edit, Trash2, ArrowUp, ArrowDown, Save, X } from "lucide-react"
+import { Plus, Edit, Trash2, ArrowUp, ArrowDown, Save, X, Upload, Loader2 } from "lucide-react"
+import { uploadImage, isImageFile } from "@/lib/storage-service"
 import {
   getCarouselSlides,
   saveCarouselSlide,
@@ -25,6 +26,9 @@ function CarouselManagementContent() {
     order: 0,
     isActive: true,
   })
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [isUploading, setIsUploading] = useState(false)
 
   useEffect(() => {
     const unsubscribe = subscribeToCarouselSlides((slidesList) => {
@@ -37,6 +41,8 @@ function CarouselManagementContent() {
   const handleOpenModal = (slide?: CarouselSlide) => {
     if (slide) {
       setEditingSlide(slide)
+      setImageFile(null)
+      setUploadProgress(0)
       setFormData({
         imageUrl: slide.imageUrl,
         tagline: slide.tagline,
@@ -47,6 +53,8 @@ function CarouselManagementContent() {
       })
     } else {
       setEditingSlide(null)
+      setImageFile(null)
+      setUploadProgress(0)
       setFormData({
         imageUrl: "",
         tagline: "",
@@ -62,6 +70,8 @@ function CarouselManagementContent() {
   const handleCloseModal = () => {
     setShowModal(false)
     setEditingSlide(null)
+    setImageFile(null)
+    setUploadProgress(0)
     setFormData({
       imageUrl: "",
       tagline: "",
@@ -73,20 +83,59 @@ function CarouselManagementContent() {
   }
 
   const handleSave = async () => {
-    if (!formData.imageUrl || !formData.title) {
-      alert("Please fill in all required fields (Image URL and Title)")
+    if (!formData.title) {
+      alert("Please fill in the title")
       return
     }
 
+    if (!formData.imageUrl && !imageFile) {
+      alert("Please upload an image")
+      return
+    }
+
+    setIsUploading(true)
+    setUploadProgress(0)
+
     try {
+      let imageUrl = formData.imageUrl
+
+      // Upload image if a file is selected
+      if (imageFile) {
+        if (!isImageFile(imageFile)) {
+          alert("Please select an image file")
+          setIsUploading(false)
+          return
+        }
+        imageUrl = await uploadImage(imageFile, "carousel", undefined, (progress) => {
+          setUploadProgress(progress)
+        })
+      }
+
       await saveCarouselSlide({
         id: editingSlide?.id,
         ...formData,
+        imageUrl,
       })
       handleCloseModal()
     } catch (error) {
       console.error("Error saving slide:", error)
       alert("Failed to save slide. Please try again.")
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (!isImageFile(file)) {
+        alert("Please select an image file")
+        return
+      }
+      setImageFile(file)
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file)
+      setFormData({ ...formData, imageUrl: previewUrl })
     }
   }
 
@@ -239,16 +288,35 @@ function CarouselManagementContent() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Image URL <span className="text-destructive">*</span>
+                  Image <span className="text-destructive">*</span>
                 </label>
-                <input
-                  type="url"
-                  value={formData.imageUrl}
-                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                  placeholder="https://example.com/image.jpg"
-                  className="w-full px-4 py-2 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
-                />
-                <p className="text-xs text-muted-foreground mt-1">Enter the full URL of the image</p>
+                <div className="space-y-2">
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageFileChange}
+                      className="hidden"
+                    />
+                    <div className="w-full px-4 py-2 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors flex items-center justify-center gap-2 cursor-pointer">
+                      <Upload className="w-5 h-5" />
+                      <span>{imageFile ? imageFile.name : "Choose Image from Gallery"}</span>
+                    </div>
+                  </label>
+                  {imageFile && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImageFile(null)
+                        setFormData({ ...formData, imageUrl: "" })
+                      }}
+                      className="text-sm text-destructive hover:underline"
+                    >
+                      Remove image
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Upload an image for the carousel slide</p>
               </div>
 
               <div>
@@ -322,6 +390,18 @@ function CarouselManagementContent() {
                         <h3 className="text-white text-4xl font-bold">{formData.title || "Title"}</h3>
                       </div>
                     </div>
+                    {imageFile && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImageFile(null)
+                          setFormData({ ...formData, imageUrl: "" })
+                        }}
+                        className="absolute top-2 right-2 p-1 bg-destructive text-white rounded hover:bg-destructive/90"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
@@ -329,14 +409,25 @@ function CarouselManagementContent() {
               <div className="flex gap-4 pt-4">
                 <button
                   onClick={handleSave}
-                  className="flex-1 flex items-center justify-center gap-2 bg-accent text-accent-foreground px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
+                  disabled={isUploading}
+                  className="flex-1 flex items-center justify-center gap-2 bg-accent text-accent-foreground px-4 py-2 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Save className="w-5 h-5" />
-                  {editingSlide ? "Update Slide" : "Add Slide"}
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Uploading... {Math.round(uploadProgress)}%</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-5 h-5" />
+                      {editingSlide ? "Update Slide" : "Add Slide"}
+                    </>
+                  )}
                 </button>
                 <button
                   onClick={handleCloseModal}
-                  className="px-4 py-2 border border-border rounded-lg hover:bg-muted transition-colors"
+                  disabled={isUploading}
+                  className="px-4 py-2 border border-border rounded-lg hover:bg-muted transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>

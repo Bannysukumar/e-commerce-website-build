@@ -6,7 +6,8 @@ import { subscribeToProducts, saveProduct, deleteProduct, initializeProducts, ty
 import { subscribeToCategories, initializeCategories, type Category } from "@/lib/categories-service"
 import { AdminProvider } from "@/lib/admin-context"
 import { createNotification } from "@/lib/newsletter-service"
-import { Plus, Edit, Trash2, Search, X } from "lucide-react"
+import { Plus, Edit, Trash2, Search, X, Upload, Loader2 } from "lucide-react"
+import { uploadImage, isImageFile } from "@/lib/storage-service"
 
 function ProductsManagementContent() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -29,6 +30,10 @@ function ProductsManagementContent() {
   })
   const [sendNotification, setSendNotification] = useState(false)
   const [additionalImageUrl, setAdditionalImageUrl] = useState("")
+  const [mainImageFile, setMainImageFile] = useState<File | null>(null)
+  const [additionalImageFiles, setAdditionalImageFiles] = useState<File[]>([])
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [isUploading, setIsUploading] = useState(false)
 
   // Initialize products and categories on first load
   useEffect(() => {
@@ -55,44 +60,83 @@ function ProductsManagementContent() {
   const filteredProducts = products.filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
 
   const handleSave = async () => {
-    if (!formData.name || !formData.price || !formData.category || !formData.image) {
-      alert("Please fill in all required fields (Name, Price, Category, and Image URL)")
+    if (!formData.name || !formData.price || !formData.category) {
+      alert("Please fill in all required fields (Name, Price, and Category)")
       return
     }
 
-    // Filter out empty image URLs
-    const imagesArray = formData.images.filter((url) => url.trim().length > 0)
+    if (!formData.image && !mainImageFile) {
+      alert("Please upload a main image")
+      return
+    }
 
-    const product: any = {
-      id: editingProduct?.id || `product_${Date.now()}`,
-      name: formData.name,
-      price: parseFloat(formData.price),
-      image: formData.image,
-      category: formData.category,
-      subcategory: formData.subcategory || "",
-      rating: editingProduct?.rating || 0,
-      reviews: editingProduct?.reviews || 0,
-      inStock: formData.inStock,
-      description: formData.description,
-      images: imagesArray.length > 0 ? imagesArray : [formData.image],
-      createdAt: editingProduct?.createdAt || new Date(),
-    }
-    
-    // Only add optional fields if they have values
-    if (formData.originalPrice && formData.originalPrice.trim() !== "") {
-      product.originalPrice = parseFloat(formData.originalPrice)
-    }
-    if (formData.gender && formData.gender.trim() !== "") {
-      product.gender = formData.gender
-    }
-    if (editingProduct?.size && editingProduct.size.length > 0) {
-      product.size = editingProduct.size
-    }
-    if (editingProduct?.colors && editingProduct.colors.length > 0) {
-      product.colors = editingProduct.colors
-    }
+    setIsUploading(true)
+    setUploadProgress(0)
 
     try {
+      let mainImageUrl = formData.image
+
+      // Upload main image if a file is selected
+      if (mainImageFile) {
+        if (!isImageFile(mainImageFile)) {
+          alert("Main image must be an image file")
+          setIsUploading(false)
+          return
+        }
+        mainImageUrl = await uploadImage(mainImageFile, "products", undefined, (progress) => {
+          setUploadProgress(progress)
+        })
+      }
+
+      // Upload additional images
+      const uploadedImages: string[] = []
+      for (let i = 0; i < additionalImageFiles.length; i++) {
+        const file = additionalImageFiles[i]
+        if (isImageFile(file)) {
+          const url = await uploadImage(file, "products", undefined, (progress) => {
+            setUploadProgress((progress * (i + 1)) / (additionalImageFiles.length + 1))
+          })
+          uploadedImages.push(url)
+        }
+      }
+
+      // Combine uploaded images with existing URLs
+      const existingImages = formData.images.filter((url) => url.trim().length > 0)
+      const allImages = uploadedImages.length > 0 
+        ? [mainImageUrl, ...uploadedImages, ...existingImages]
+        : existingImages.length > 0 
+          ? [mainImageUrl, ...existingImages]
+          : [mainImageUrl]
+
+      const product: any = {
+        id: editingProduct?.id || `product_${Date.now()}`,
+        name: formData.name,
+        price: parseFloat(formData.price),
+        image: mainImageUrl,
+        category: formData.category,
+        subcategory: formData.subcategory || "",
+        rating: editingProduct?.rating || 0,
+        reviews: editingProduct?.reviews || 0,
+        inStock: formData.inStock,
+        description: formData.description,
+        images: allImages,
+        createdAt: editingProduct?.createdAt || new Date(),
+      }
+      
+      // Only add optional fields if they have values
+      if (formData.originalPrice && formData.originalPrice.trim() !== "") {
+        product.originalPrice = parseFloat(formData.originalPrice)
+      }
+      if (formData.gender && formData.gender.trim() !== "") {
+        product.gender = formData.gender
+      }
+      if (editingProduct?.size && editingProduct.size.length > 0) {
+        product.size = editingProduct.size
+      }
+      if (editingProduct?.colors && editingProduct.colors.length > 0) {
+        product.colors = editingProduct.colors
+      }
+
       await saveProduct(product)
       
       // Send notification if it's a new product and notification is enabled
@@ -113,6 +157,9 @@ function ProductsManagementContent() {
       setShowModal(false)
       setEditingProduct(null)
       setSendNotification(false)
+      setMainImageFile(null)
+      setAdditionalImageFiles([])
+      setUploadProgress(0)
       setFormData({
         name: "",
         price: "",
@@ -128,7 +175,9 @@ function ProductsManagementContent() {
       setAdditionalImageUrl("")
     } catch (error) {
       console.error("Error saving product:", error)
-      alert("Failed to save product")
+      alert("Failed to save product. Please try again.")
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -146,6 +195,9 @@ function ProductsManagementContent() {
   const handleEdit = (product: Product) => {
     setEditingProduct(product)
     setSendNotification(false) // Don't send notification when editing
+    setMainImageFile(null)
+    setAdditionalImageFiles([])
+    setUploadProgress(0)
     setFormData({
       name: product.name,
       price: product.price.toString(),
@@ -179,6 +231,33 @@ function ProductsManagementContent() {
     })
   }
 
+  const handleMainImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (!isImageFile(file)) {
+        alert("Please select an image file")
+        return
+      }
+      setMainImageFile(file)
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file)
+      setFormData({ ...formData, image: previewUrl })
+    }
+  }
+
+  const handleAdditionalImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    const imageFiles = files.filter(isImageFile)
+    if (imageFiles.length !== files.length) {
+      alert("Some files were not images and were skipped")
+    }
+    setAdditionalImageFiles([...additionalImageFiles, ...imageFiles])
+  }
+
+  const handleRemoveAdditionalImageFile = (index: number) => {
+    setAdditionalImageFiles(additionalImageFiles.filter((_, i) => i !== index))
+  }
+
   return (
     <div className="flex bg-background">
       <AdminSidebar />
@@ -192,6 +271,9 @@ function ProductsManagementContent() {
                 setEditingProduct(null)
                 setSendNotification(false)
                 setAdditionalImageUrl("")
+                setMainImageFile(null)
+                setAdditionalImageFiles([])
+                setUploadProgress(0)
                 setFormData({
                   name: "",
                   price: "",
@@ -330,46 +412,82 @@ function ProductsManagementContent() {
                         className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                       />
                     </div>
-                    <input
-                      type="url"
-                      placeholder="Main Image URL *"
-                      value={formData.image}
-                      onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                      className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                    />
-                    {formData.image && (
-                      <div className="relative h-32 rounded-lg overflow-hidden border border-border">
-                        <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium">Main Image *</label>
+                      <div className="flex items-center gap-2">
+                        <label className="flex-1 cursor-pointer">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleMainImageChange}
+                            className="hidden"
+                          />
+                          <div className="w-full px-4 py-3 border border-border rounded-lg hover:bg-muted/50 transition-colors flex items-center justify-center gap-2 cursor-pointer">
+                            <Upload className="w-5 h-5" />
+                            <span>{mainImageFile ? mainImageFile.name : "Choose Image from Gallery"}</span>
+                          </div>
+                        </label>
                       </div>
-                    )}
+                      {formData.image && (
+                        <div className="relative h-32 rounded-lg overflow-hidden border border-border">
+                          <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
+                          {mainImageFile && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMainImageFile(null)
+                                setFormData({ ...formData, image: "" })
+                              }}
+                              className="absolute top-2 right-2 p-1 bg-destructive text-white rounded hover:bg-destructive/90"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
                     <div className="space-y-3">
                       <label className="block text-sm font-medium">Additional Images (Optional)</label>
                       <div className="flex gap-2">
-                        <input
-                          type="text"
-                          placeholder="Enter image URL"
-                          value={additionalImageUrl}
-                          onChange={(e) => setAdditionalImageUrl(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault()
-                              handleAddImageUrl()
-                            }
-                          }}
-                          className="flex-1 px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleAddImageUrl}
-                          className="px-6 py-3 bg-accent text-accent-foreground rounded-lg hover:opacity-90 transition-opacity font-semibold whitespace-nowrap"
-                        >
-                          Add URL
-                        </button>
+                        <label className="flex-1 cursor-pointer">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={handleAdditionalImagesChange}
+                            className="hidden"
+                          />
+                          <div className="w-full px-4 py-3 border border-border rounded-lg hover:bg-muted/50 transition-colors flex items-center justify-center gap-2 cursor-pointer">
+                            <Upload className="w-5 h-5" />
+                            <span>Choose Images from Gallery</span>
+                          </div>
+                        </label>
                       </div>
-                      {formData.images.length > 0 && (
+                      {(additionalImageFiles.length > 0 || formData.images.length > 0) && (
                         <div className="space-y-2 mt-3">
+                          {additionalImageFiles.map((file, index) => {
+                            const previewUrl = URL.createObjectURL(file)
+                            return (
+                              <div key={`file-${index}`} className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm text-muted-foreground truncate">{file.name}</p>
+                                  <div className="relative h-16 rounded overflow-hidden border border-border mt-2">
+                                    <img src={previewUrl} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
+                                  </div>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveAdditionalImageFile(index)}
+                                  className="p-2 hover:bg-destructive/10 rounded transition-colors text-destructive"
+                                  aria-label="Remove image"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </div>
+                            )
+                          })}
                           {formData.images.map((url, index) => (
-                            <div key={index} className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                            <div key={`url-${index}`} className="flex items-center gap-2 p-3 bg-muted rounded-lg">
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm text-muted-foreground truncate">{url}</p>
                                 {url && (
@@ -455,18 +573,21 @@ function ProductsManagementContent() {
                         setEditingProduct(null)
                         setSendNotification(false)
                         setAdditionalImageUrl("")
-                      setFormData({
-                        name: "",
-                        price: "",
-                        originalPrice: "",
-                        category: "",
-                        subcategory: "",
-                        gender: "",
-                        description: "",
-                        image: "",
-                        images: [],
-                        inStock: true,
-                      })
+                        setMainImageFile(null)
+                        setAdditionalImageFiles([])
+                        setUploadProgress(0)
+                        setFormData({
+                          name: "",
+                          price: "",
+                          originalPrice: "",
+                          category: "",
+                          subcategory: "",
+                          gender: "",
+                          description: "",
+                          image: "",
+                          images: [],
+                          inStock: true,
+                        })
                       }}
                       className="flex-1 px-6 py-3 border border-border rounded-lg hover:bg-muted transition-colors font-semibold"
                     >
@@ -474,9 +595,17 @@ function ProductsManagementContent() {
                     </button>
                     <button
                       onClick={handleSave}
-                      className="flex-1 px-6 py-3 bg-accent text-accent-foreground rounded-lg hover:opacity-90 transition-opacity font-semibold"
+                      disabled={isUploading}
+                      className="flex-1 px-6 py-3 bg-accent text-accent-foreground rounded-lg hover:opacity-90 transition-opacity font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
-                      Save
+                      {isUploading ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <span>Uploading... {Math.round(uploadProgress)}%</span>
+                        </>
+                      ) : (
+                        "Save"
+                      )}
                     </button>
                   </div>
                 </div>
