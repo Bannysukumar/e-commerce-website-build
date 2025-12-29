@@ -1,12 +1,12 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { CartProvider } from "@/lib/cart-context"
 import { WishlistProvider } from "@/lib/wishlist-context"
 import { AuthProvider } from "@/lib/auth-context"
 import { WhatsAppButton } from "@/components/whatsapp-button"
+import { ConditionalAnalytics } from "@/components/conditional-analytics"
 
 // Force dynamic rendering to prevent static page caching
 export const dynamic = 'force-dynamic'
@@ -46,7 +46,7 @@ export default function RootLayout({
             </WishlistProvider>
           </CartProvider>
         </AuthProvider>
-        <Analytics />
+        <ConditionalAnalytics />
       </body>
     </html>
   )
