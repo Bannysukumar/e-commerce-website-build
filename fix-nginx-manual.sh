@@ -1,0 +1,41 @@
+#!/bin/bash
+# Manual fix guide - shows exactly what needs to be done
+
+NGINX_CONFIG="/www/server/panel/vhost/nginx/swebirdshop.com.conf"
+
+echo "=== Current Nginx Config Structure ==="
+echo ""
+echo "First 10 lines:"
+head -10 "$NGINX_CONFIG"
+
+echo ""
+echo "Lines 110-120 (around proxy include):"
+sed -n '110,120p' "$NGINX_CONFIG"
+
+echo ""
+echo "=== The Problem ==="
+echo "There's a location block at line 6 (outside server block)"
+echo "We need to:"
+echo "1. Remove the location block from line 6"
+echo "2. Add it inside the server block, before the proxy include"
+echo ""
+echo "=== Manual Fix Instructions ==="
+echo "1. Edit the config: nano $NGINX_CONFIG"
+echo "2. Delete lines 1-15 (the location block at the top)"
+echo "3. Go to line 115 (the proxy include)"
+echo "4. Add this BEFORE line 115 (inside the server block):"
+echo ""
+echo "    location ~ \.jpg$ {"
+echo "        proxy_pass http://127.0.0.1:3000;"
+echo "        proxy_http_version 1.1;"
+echo "        proxy_set_header Host \$host;"
+echo "        proxy_set_header X-Real-IP \$remote_addr;"
+echo "        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;"
+echo "        proxy_set_header X-Forwarded-Proto \$scheme;"
+echo "        expires 1y;"
+echo "        add_header Cache-Control \"public, immutable\";"
+echo "    }"
+echo ""
+echo "5. Save and test: nginx -t"
+echo "6. If test passes: /etc/init.d/nginx reload"
+
