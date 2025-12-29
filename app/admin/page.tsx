@@ -20,7 +20,7 @@ function AdminDashboardContent() {
       value: "0",
       change: "0 this month",
       icon: Package,
-      color: "text-blue-600",
+      color: "text-purple-600",
     },
     {
       label: "Orders",
@@ -64,7 +64,7 @@ function AdminDashboardContent() {
           value: data.totalProducts,
           change: "0 this month",
           icon: Package,
-          color: "text-blue-600",
+          color: "text-purple-600",
         },
         {
           label: "Orders",
@@ -141,7 +141,7 @@ function AdminDashboardContent() {
                           order.status === "Delivered"
                             ? "text-green-600"
                             : order.status === "Shipped"
-                              ? "text-blue-600"
+                              ? "text-purple-600"
                               : "text-amber-600"
                         }`}
                       >

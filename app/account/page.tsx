@@ -340,7 +340,7 @@ function AccountContent() {
                             order.status === "Delivered"
                               ? "text-green-600"
                               : order.status === "Shipped"
-                                ? "text-blue-600"
+                                ? "text-purple-600"
                                 : order.status === "Processing"
                                   ? "text-yellow-600"
                                   : "text-gray-600"

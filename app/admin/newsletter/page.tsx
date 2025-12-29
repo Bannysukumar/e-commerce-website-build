@@ -186,7 +186,7 @@ function NewsletterManagementContent() {
                             <span
                               className={`px-3 py-1 rounded-full text-xs font-medium ${
                                 notification.type === "new_product"
-                                  ? "bg-blue-100 text-blue-700"
+                                  ? "bg-purple-100 text-purple-700"
                                   : notification.type === "new_offer"
                                   ? "bg-orange-100 text-orange-700"
                                   : "bg-gray-100 text-gray-700"

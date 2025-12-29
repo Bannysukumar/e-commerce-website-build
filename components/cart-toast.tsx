@@ -27,7 +27,7 @@ export function CartToast({ message, type = "success", onClose }: CartToastProps
   const bgColor = {
     success: "bg-green-500",
     error: "bg-red-500",
-    info: "bg-blue-500",
+    info: "bg-purple-500",
   }[type]
 
   return (

@@ -69,7 +69,7 @@ function TrackOrderContent() {
       case "Delivered":
         return <CheckCircle className="w-5 h-5 text-green-600" />
       case "Shipped":
-        return <Package className="w-5 h-5 text-blue-600" />
+        return <Package className="w-5 h-5 text-purple-600" />
       case "Processing":
         return <Clock className="w-5 h-5 text-yellow-600" />
       case "Pending":
@@ -86,7 +86,7 @@ function TrackOrderContent() {
       case "Delivered":
         return "bg-green-100 text-green-800"
       case "Shipped":
-        return "bg-blue-100 text-blue-800"
+        return "bg-purple-100 text-purple-800"
       case "Processing":
         return "bg-yellow-100 text-yellow-800"
       case "Pending":

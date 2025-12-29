@@ -382,7 +382,7 @@ function CouponsManagementContent() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
-                          <button onClick={() => handleEdit(coupon)} className="text-blue-600 hover:text-blue-800">
+                          <button onClick={() => handleEdit(coupon)} className="text-purple-600 hover:text-purple-800">
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button onClick={() => handleDelete(coupon.id)} className="text-red-600 hover:text-red-800">

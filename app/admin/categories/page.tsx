@@ -286,7 +286,7 @@ export default function CategoriesPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
-                        <button onClick={() => handleEdit(category)} className="text-blue-600 hover:text-blue-800">
+                        <button onClick={() => handleEdit(category)} className="text-purple-600 hover:text-purple-800">
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button onClick={() => handleDelete(category.id)} className="text-red-600 hover:text-red-800">
