@@ -20,8 +20,32 @@ echo "=== 4. Remove location block from top level (lines 1-15) ==="
 sed -i '/^[[:space:]]*location ~ \\.jpg$/,/^[[:space:]]*}$/d' "$NGINX_CONFIG"
 
 echo ""
-echo "=== 5. Find proxy include line ==="
-PROXY_LINE=$(grep -n "include.*proxy.*swebirdshop" "$NGINX_CONFIG" | grep -v "^#" | head -1 | cut -d: -f1)
+echo "=== 5. Find proxy include line (uncommented, inside server block) ==="
+# Server block starts around line 42, proxy include should be after that (around line 115)
+SERVER_START=$(grep -n "^server\|^[[:space:]]*server" "$NGINX_CONFIG" | head -1 | cut -d: -f1)
+echo "Server block starts at line: $SERVER_START"
+
+# Find all proxy include lines
+echo "All proxy include lines:"
+grep -n "include.*proxy.*swebirdshop" "$NGINX_CONFIG"
+
+# Get lines after server block and check which one is not commented
+PROXY_LINE=""
+while IFS=: read -r line_num line_content; do
+    if [ "$line_num" -gt "$SERVER_START" ]; then
+        # Check if line is not commented
+        if ! echo "$line_content" | grep -q "^[[:space:]]*#"; then
+            PROXY_LINE="$line_num"
+            break
+        fi
+    fi
+done < <(grep -n "include.*proxy.*swebirdshop" "$NGINX_CONFIG")
+
+if [ -z "$PROXY_LINE" ]; then
+    echo "❌ Could not find uncommented proxy include after server block"
+    exit 1
+fi
+
 echo "Proxy include at line: $PROXY_LINE"
 
 if [ ! -z "$PROXY_LINE" ]; then
@@ -49,7 +73,9 @@ fi
 
 echo ""
 echo "=== 7. Verify the change (around proxy include) ==="
-sed -n "$((PROXY_LINE-5)),$((PROXY_LINE+2))p" "$NGINX_CONFIG"
+START_LINE=$((PROXY_LINE-5))
+END_LINE=$((PROXY_LINE+2))
+sed -n "${START_LINE},${END_LINE}p" "$NGINX_CONFIG"
 
 echo ""
 echo "=== 8. Testing Nginx configuration ==="
