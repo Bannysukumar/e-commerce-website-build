@@ -178,7 +178,7 @@ export function Header() {
               <img 
                 src="/logo.jpg" 
                 alt="swebirdshop" 
-                className="h-12 md:h-16 w-auto object-contain"
+                className="h-12 md:h-16 w-auto object-contain hidden"
               />
               <h1 className="text-2xl md:text-4xl font-bold tracking-tight text-white" style={{ fontFamily: 'sans-serif', letterSpacing: '0.05em' }}>swebirdshop</h1>
             </Link>
