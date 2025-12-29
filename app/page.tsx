@@ -13,6 +13,7 @@ import { WishlistProvider } from "@/lib/wishlist-context"
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel"
 import { getCarouselSlides, subscribeToCarouselSlides, type CarouselSlide } from "@/lib/carousel-service"
 import { subscribeToFeaturedProducts, type FeaturedProduct } from "@/lib/featured-products-service"
+import { subscribeToTrendingProducts, type TrendingProduct } from "@/lib/trending-products-service"
 import { StoryProductCard } from "@/components/story-product-card"
 import { TestimonialsSection } from "@/components/testimonials-section"
 import { Plus } from "lucide-react"
@@ -35,6 +36,8 @@ function HomeContent() {
   const [loadingCarousel, setLoadingCarousel] = useState(true)
   const [featuredProducts, setFeaturedProducts] = useState<FeaturedProduct[]>([])
   const [loadingFeatured, setLoadingFeatured] = useState(true)
+  const [trendingProducts, setTrendingProducts] = useState<TrendingProduct[]>([])
+  const [loadingTrending, setLoadingTrending] = useState(true)
   const [sections, setSections] = useState<HomepageSection[]>([])
   const [loadingSections, setLoadingSections] = useState(true)
   const [api, setApi] = useState<CarouselApi>()
@@ -64,6 +67,15 @@ function HomeContent() {
     const unsubscribe = subscribeToFeaturedProducts((featured) => {
       setFeaturedProducts(featured)
       setLoadingFeatured(false)
+    })
+    return () => unsubscribe()
+  }, [])
+
+  // Load trending products
+  useEffect(() => {
+    const unsubscribe = subscribeToTrendingProducts((trending) => {
+      setTrendingProducts(trending)
+      setLoadingTrending(false)
     })
     return () => unsubscribe()
   }, [])
@@ -205,7 +217,8 @@ function HomeContent() {
         )}
       </section>
 
-      {/* TRENDING NOW - Category Section */}
+      {/* TRENDING NOW - Products Section */}
+      {trendingProducts.length > 0 && (
       <ScrollAnimation direction="slide-up" delay={0}>
         <section className="py-16 px-4 bg-white">
           <div className="max-w-7xl mx-auto">
@@ -214,37 +227,25 @@ function HomeContent() {
                 <h2 className="text-sm font-normal text-gray-500 mb-2 uppercase">TRENDING NOW</h2>
               </div>
             </ScrollAnimation>
-          <div className="overflow-x-auto pb-4">
-            <div className="flex gap-6 min-w-max">
-              {shopCategories.map((category, index) => {
-                const categoryProducts = products.filter((p) => 
-                  p.category.toLowerCase().includes(category.id.toLowerCase().replace("-", " ")) ||
-                  p.category.toLowerCase() === category.id.toLowerCase()
-                )
-                return (
-                  <Link key={category.id} href={`/products?category=${category.id}`}>
-                    <div className="relative w-[280px] aspect-square rounded-lg overflow-hidden group cursor-pointer">
-                      <img
-                        src={category.image}
-                        alt={category.name}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                      <div className="absolute top-4 right-4 w-10 h-10 bg-[#6B46C1] text-white rounded-full flex items-center justify-center font-bold text-lg">
-                        {index + 1}
-                      </div>
-                      <div className="absolute bottom-6 left-6 right-6">
-                        <h3 className="text-2xl font-bold text-white mb-2">{category.name}</h3>
-                      </div>
-                    </div>
-                  </Link>
-                )
+              {loadingTrending ? (
+                <div className="text-center py-12 text-gray-500">Loading trending products...</div>
+              ) : (
+                <StaggeredGrid
+                  className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
+                  staggerDelay={100}
+                  direction="slide-up"
+                >
+                  {trendingProducts.map((trending) => {
+                    const product = products.find((p) => p.id === trending.productId)
+                    if (!product) return null
+                    return <ProductCard key={trending.id} product={product} />
               })}
-            </div>
-          </div>
+                </StaggeredGrid>
+              )}
         </div>
       </section>
       </ScrollAnimation>
+      )}
 
       {/* Our Stories Section */}
       {storyProducts.length > 0 && (
@@ -575,76 +576,6 @@ function HomeContent() {
             <div className="flex flex-col items-center text-center">
               <Sparkles className="w-12 h-12 text-orange-500 mb-3" strokeWidth={1.5} />
               <h3 className="font-normal text-sm text-gray-900">24/7 Support</h3>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* TRENDING NOW - Lifestyle Images Grid Section */}
-      <section className="py-16 px-4 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-sm font-normal text-gray-500 uppercase">TRENDING NOW</h2>
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            {/* Top Row - 3 square images */}
-            <div className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer">
-              <img
-                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80"
-                alt="Lifestyle 1"
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              />
-            </div>
-            <div className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer">
-              <img
-                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80"
-                alt="Lifestyle 2"
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              />
-            </div>
-            <div className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer">
-              <img
-                src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&q=80"
-                alt="Lifestyle 3"
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              />
-            </div>
-            {/* Middle Row - 3 square images */}
-            <div className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer">
-              <img
-                src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80"
-                alt="Lifestyle 4"
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              />
-            </div>
-            <div className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer">
-              <img
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80"
-                alt="Lifestyle 5"
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              />
-            </div>
-            <div className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer">
-              <img
-                src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&q=80"
-                alt="Lifestyle 6"
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              />
-            </div>
-            {/* Bottom Row - 1 large rectangular + 1 square */}
-            <div className="relative col-span-2 aspect-[2/1] rounded-lg overflow-hidden group cursor-pointer">
-              <img
-                src="https://images.unsplash.com/photo-1507591064344-4c6ce005b128?w=800&q=80"
-                alt="Lifestyle 7"
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              />
-            </div>
-            <div className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer">
-              <img
-                src="https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=400&q=80"
-                alt="Lifestyle 8"
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-              />
             </div>
           </div>
         </div>

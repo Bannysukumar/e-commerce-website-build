@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutGrid, Package, ShoppingCart, Users, BarChart3, Settings, LogOut, Image, Sparkles, MessageSquare, Layers, FolderTree, Mail, Ticket, Bell } from "lucide-react"
+import { LayoutGrid, Package, ShoppingCart, Users, BarChart3, Settings, LogOut, Image, Sparkles, MessageSquare, Layers, FolderTree, Mail, Ticket, Bell, TrendingUp } from "lucide-react"
 
 export function AdminSidebar() {
   const pathname = usePathname()
@@ -18,6 +18,7 @@ export function AdminSidebar() {
     { href: "/admin/newsletter", icon: Bell, label: "Newsletter" },
     { href: "/admin/carousel", icon: Image, label: "Carousel" },
     { href: "/admin/featured-products", icon: Sparkles, label: "Story Products" },
+    { href: "/admin/trending-products", icon: TrendingUp, label: "Trending Products" },
     { href: "/admin/testimonials", icon: MessageSquare, label: "Testimonials" },
     { href: "/admin/sections", icon: Layers, label: "Homepage Sections" },
     { href: "/admin/analytics", icon: BarChart3, label: "Analytics" },

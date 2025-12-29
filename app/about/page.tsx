@@ -37,18 +37,13 @@ export default function AboutPage() {
         <div className="max-w-4xl mx-auto">
           <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-8 text-balance">Our Story</h2>
           <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
-            Founded with a passion for excellence, swebirdshop was created to revolutionize the way people shop online.
-            We believe that every customer deserves access to high-quality products at fair prices with exceptional
-            service.
+            Swe Bird is a trusted online fashion store run by Swechha. The idea behind SweBird is to provide stylish and trendy fashion products at affordable prices with complete transparency.
           </p>
           <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
-            From our humble beginnings to becoming a trusted brand, we've stayed committed to our core values: quality,
-            integrity, and customer satisfaction. Every product in our store is carefully curated to ensure it meets our
-            rigorous standards.
+            We believe in honesty and clarity. There are no false promises, no misleading claims, and no hidden information. Every product listed on Swe Bird is described truthfully so customers know exactly what they are buying.
           </p>
           <p className="text-lg text-muted-foreground leading-relaxed">
-            Today, thousands of customers trust us every day. We're not just selling products; we're building a
-            community of satisfied shoppers who appreciate quality and value.
+            SweBird is committed to building long-term trust by delivering quality replica fashion products with clear policies and customer-focused support.
           </p>
         </div>
       </section>

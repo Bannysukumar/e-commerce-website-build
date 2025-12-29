@@ -21,7 +21,7 @@ function ProductsContent() {
   const searchParams = useSearchParams()
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get("category") || "")
-  const [selectedPrice, setSelectedPrice] = useState<[number, number]>([0, 500])
+  const [selectedPrice, setSelectedPrice] = useState<[number, number]>([0, 100000])
   const [selectedRating, setSelectedRating] = useState<number>(0)
   const [sortBy, setSortBy] = useState("trending")
   const [filtersOpen, setFiltersOpen] = useState(true)
@@ -43,6 +43,8 @@ function ProductsContent() {
     const categoryParam = searchParams.get("category")
     if (categoryParam) {
       setSelectedCategory(categoryParam)
+    } else {
+      setSelectedCategory("")
     }
   }, [searchParams])
 
@@ -110,13 +112,15 @@ function ProductsContent() {
     }
 
     return result
-  }, [searchTerm, selectedCategory, selectedPrice, selectedRating, sortBy])
+  }, [products, searchTerm, selectedCategory, selectedPrice, selectedRating, sortBy])
 
   const priceRanges = [
+    { label: "All Prices", min: 0, max: 100000 },
     { label: "Under ₹50", min: 0, max: 50 },
     { label: "₹50 - ₹100", min: 50, max: 100 },
     { label: "₹100 - ₹200", min: 100, max: 200 },
-    { label: "Over ₹200", min: 200, max: 500 },
+    { label: "₹200 - ₹500", min: 200, max: 500 },
+    { label: "Over ₹500", min: 500, max: 100000 },
   ]
 
   return (
@@ -234,13 +238,13 @@ function ProductsContent() {
                   </div>
 
                   {/* Clear Filters */}
-                  {(searchTerm || selectedCategory || selectedRating > 0) && (
+                  {(searchTerm || selectedCategory || selectedRating > 0 || (selectedPrice[0] !== 0 || selectedPrice[1] !== 100000)) && (
                     <button
                       onClick={() => {
                         setSearchTerm("")
                         setSelectedCategory("")
                         setSelectedRating(0)
-                        setSelectedPrice([0, 500])
+                        setSelectedPrice([0, 100000])
                       }}
                       className="w-full px-4 py-3 border border-border rounded hover:bg-muted transition-colors text-sm font-light uppercase tracking-widest"
                     >

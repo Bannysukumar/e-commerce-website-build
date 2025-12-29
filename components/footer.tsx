@@ -28,33 +28,33 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/products?category=necklace" className="text-sm text-white/90 hover:text-white transition-colors inline-block">
-                  Necklace
-                </Link>
-              </li>
-              <li>
-                <Link href="/products?category=rings" className="text-sm text-white/90 hover:text-white transition-colors inline-block">
-                  Rings
-                </Link>
-              </li>
-              <li>
-                <Link href="/products?category=bracelets" className="text-sm text-white/90 hover:text-white transition-colors inline-block">
-                  Bracelets
-                </Link>
-              </li>
-              <li>
-                <Link href="/products?category=earrings" className="text-sm text-white/90 hover:text-white transition-colors inline-block">
-                  Earrings
-                </Link>
-              </li>
-              <li>
                 <Link href="/products?category=watches" className="text-sm text-white/90 hover:text-white transition-colors inline-block">
                   Watches
                 </Link>
               </li>
               <li>
-                <Link href="/gift-cards" className="text-sm text-white/90 hover:text-white transition-colors inline-block">
-                  Gift Cards
+                <Link href="/products?category=watches&subcategory=women" className="text-sm text-white/90 hover:text-white transition-colors inline-block">
+                  Women Watches
+                </Link>
+              </li>
+              <li>
+                <Link href="/products?category=electronics" className="text-sm text-white/90 hover:text-white transition-colors inline-block">
+                  Electronics
+                </Link>
+              </li>
+              <li>
+                <Link href="/products?category=bags" className="text-sm text-white/90 hover:text-white transition-colors inline-block">
+                  Bags
+                </Link>
+              </li>
+              <li>
+                <Link href="/products?category=shoes" className="text-sm text-white/90 hover:text-white transition-colors inline-block">
+                  Shoes
+                </Link>
+              </li>
+              <li>
+                <Link href="/products?category=clothes" className="text-sm text-white/90 hover:text-white transition-colors inline-block">
+                  Clothes
                 </Link>
               </li>
             </ul>

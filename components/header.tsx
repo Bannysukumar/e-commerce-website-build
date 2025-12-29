@@ -174,8 +174,13 @@ export function Header() {
               </button>
             </div>
             {/* Brand Name - Centered */}
-            <Link href="/" className="flex-1 flex justify-center">
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white" style={{ fontFamily: 'sans-serif', letterSpacing: '0.05em' }}>swebirdshop</h1>
+            <Link href="/" className="flex-1 flex justify-center items-center gap-3">
+              <img 
+                src="/logo.jpg" 
+                alt="swebirdshop" 
+                className="h-12 md:h-16 w-auto object-contain"
+              />
+              <h1 className="text-2xl md:text-4xl font-bold tracking-tight text-white" style={{ fontFamily: 'sans-serif', letterSpacing: '0.05em' }}>swebirdshop</h1>
             </Link>
             {/* Utility Icons - Right */}
             <div className="flex-1 flex items-center justify-end gap-4">
