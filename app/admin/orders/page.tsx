@@ -320,20 +320,53 @@ function OrdersManagementContent() {
                             Payment Information
                           </h3>
                           <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Card Name:</span>
-                              <span className="font-medium">{selectedOrder.paymentInfo.cardName}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Card Number:</span>
-                              <span className="font-mono text-sm">
-                                **** **** **** {selectedOrder.paymentInfo.cardNumber.slice(-4)}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Expiry:</span>
-                              <span className="font-medium">{selectedOrder.paymentInfo.cardExpiry}</span>
-                            </div>
+                            {selectedOrder.paymentInfo.razorpayPaymentId ? (
+                              <>
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Payment Method:</span>
+                                  <span className="font-medium">{selectedOrder.paymentInfo.paymentMethod || "Razorpay"}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Payment ID:</span>
+                                  <span className="font-mono text-sm">
+                                    {selectedOrder.paymentInfo.razorpayPaymentId}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Order ID:</span>
+                                  <span className="font-mono text-sm">
+                                    {selectedOrder.paymentInfo.razorpayOrderId}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Payment Status:</span>
+                                  <span className={`font-medium ${
+                                    selectedOrder.paymentInfo.paymentStatus === "authorized" || selectedOrder.paymentInfo.paymentStatus === "captured"
+                                      ? "text-green-600"
+                                      : "text-yellow-600"
+                                  }`}>
+                                    {selectedOrder.paymentInfo.paymentStatus || "N/A"}
+                                  </span>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Card Name:</span>
+                                  <span className="font-medium">{selectedOrder.paymentInfo.cardName || "N/A"}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Card Number:</span>
+                                  <span className="font-mono text-sm">
+                                    {selectedOrder.paymentInfo.cardNumber ? `**** **** **** ${selectedOrder.paymentInfo.cardNumber.slice(-4)}` : "N/A"}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Expiry:</span>
+                                  <span className="font-medium">{selectedOrder.paymentInfo.cardExpiry || "N/A"}</span>
+                                </div>
+                              </>
+                            )}
                           </div>
                         </div>
 

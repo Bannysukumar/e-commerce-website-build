@@ -40,8 +40,8 @@ function AdminSettingsContent() {
     twoFactorAuth: false,
     passwordMinLength: "8",
     sessionTimeout: "30",
-    stripeKey: "sk_test_****",
-    paypalEmail: "business@example.com",
+    razorpayKeyId: "rzp_live_Rxsf6lkhhXIzQr",
+    razorpayKeySecret: "sN8ke5Kuu5ae3vBoMNZWTIMs",
     mailerServiceProvider: "sendgrid",
   })
 
@@ -363,23 +363,31 @@ function AdminSettingsContent() {
               </h2>
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Stripe API Key</label>
+                  <label className="block text-sm font-medium mb-2">Razorpay Key ID</label>
                   <input
-                    type="password"
-                    value={settings.stripeKey}
-                    onChange={(e) => handleInputChange("stripeKey", e.target.value)}
+                    type="text"
+                    value={settings.razorpayKeyId}
+                    onChange={(e) => handleInputChange("razorpayKeyId", e.target.value)}
                     className="w-full px-4 py-2 border border-border rounded-lg bg-background"
+                    placeholder="rzp_live_..."
                   />
-                  <p className="text-xs text-muted-foreground mt-1">Your API key is encrypted and secure</p>
+                  <p className="text-xs text-muted-foreground mt-1">Your Razorpay Key ID (public key)</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">PayPal Email</label>
+                  <label className="block text-sm font-medium mb-2">Razorpay Key Secret</label>
                   <input
-                    type="email"
-                    value={settings.paypalEmail}
-                    onChange={(e) => handleInputChange("paypalEmail", e.target.value)}
+                    type="password"
+                    value={settings.razorpayKeySecret}
+                    onChange={(e) => handleInputChange("razorpayKeySecret", e.target.value)}
                     className="w-full px-4 py-2 border border-border rounded-lg bg-background"
+                    placeholder="Enter your secret key"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">Your Razorpay Key Secret (keep this secure)</p>
+                </div>
+                <div className="bg-muted/50 border border-border rounded-lg p-4">
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Note:</strong> Razorpay is now your active payment gateway. All payments will be processed through Razorpay's secure payment system.
+                  </p>
                 </div>
               </div>
             </div>

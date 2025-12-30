@@ -16,6 +16,13 @@ import { CartProvider } from "@/lib/cart-context"
 import { Check, ChevronLeft, X } from "lucide-react"
 import { CheckoutProgress } from "@/components/checkout-progress"
 import { CartToast } from "@/components/cart-toast"
+import { RAZORPAY_KEY_ID } from "@/lib/razorpay-service"
+
+declare global {
+  interface Window {
+    Razorpay: any
+  }
+}
 
 function CheckoutContent() {
   const router = useRouter()
@@ -42,15 +49,25 @@ function CheckoutContent() {
     city: "",
     state: "",
     zipCode: "",
-    cardName: "",
-    cardNumber: "",
-    cardExpiry: "",
-    cardCVC: "",
   })
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false)
 
   // Load products
   useEffect(() => {
     getProducts().then(setProducts)
+  }, [])
+
+  // Load Razorpay script
+  useEffect(() => {
+    const script = document.createElement("script")
+    script.src = "https://checkout.razorpay.com/v1/checkout.js"
+    script.async = true
+    script.onload = () => setRazorpayLoaded(true)
+    document.body.appendChild(script)
+
+    return () => {
+      document.body.removeChild(script)
+    }
   }, [])
 
   const cartItems = items.map((item) => {
@@ -113,56 +130,149 @@ function CheckoutContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validate shipping information
+    if (!formData.firstName || !formData.email || !formData.phone || !formData.address) {
+      setToast({ message: "Please fill in all required shipping information", type: "error" })
+      return
+    }
+
+    if (!razorpayLoaded || !window.Razorpay) {
+      setToast({ message: "Payment gateway is loading. Please wait...", type: "error" })
+      return
+    }
+
     setCurrentStep(3)
     setLoading(true)
+
     try {
-      const orderData = {
-        userId: user?.id || null,
-        items,
-        shippingInfo: {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
+      // Create Razorpay order
+      const response = await fetch("/api/razorpay/create-order", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          amount: total,
+          currency: "INR",
+          receipt: `receipt_${Date.now()}`,
+          notes: {
+            userId: user?.id || "guest",
+            email: formData.email,
+            phone: formData.phone,
+          },
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to create payment order")
+      }
+
+      const razorpayOrder = await response.json()
+
+      // Initialize Razorpay checkout
+      const options = {
+        key: RAZORPAY_KEY_ID,
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency,
+        name: "SweBird",
+        description: `Order for ${formData.firstName} ${formData.lastName}`,
+        order_id: razorpayOrder.id,
+        handler: async function (response: any) {
+          try {
+            // Verify payment
+            const verifyResponse = await fetch("/api/razorpay/verify-payment", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            })
+
+            const verification = await verifyResponse.json()
+
+            if (!verification.verified) {
+              throw new Error("Payment verification failed")
+            }
+
+            // Create order in database
+            const orderData = {
+              userId: user?.id || null,
+              items,
+              shippingInfo: {
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                email: formData.email,
+                phone: formData.phone,
+                address: formData.address,
+                city: formData.city,
+                state: formData.state,
+                zipCode: formData.zipCode,
+              },
+              paymentInfo: {
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+                paymentMethod: verification.payment.method || "razorpay",
+                paymentStatus: verification.payment.status,
+              },
+              subtotal,
+              shipping,
+              tax,
+              total,
+              couponCode: appliedCoupon?.code || null,
+              discount: discount,
+              status: "Processing" as const,
+            }
+
+            const result = await createOrder(orderData)
+
+            // Mark coupon as used if applied
+            if (appliedCoupon?.code) {
+              try {
+                await useCoupon(appliedCoupon.code)
+              } catch (error) {
+                console.error("Error marking coupon as used:", error)
+              }
+            }
+
+            setOrderId(result.id)
+            setOrderNumber(result.orderNumber)
+            setOrderPlaced(true)
+            clearCart()
+            setToast({ message: "Payment successful! Order placed successfully!", type: "success" })
+          } catch (error) {
+            console.error("Error processing payment:", error)
+            setToast({ message: "Payment verification failed. Please contact support.", type: "error" })
+          } finally {
+            setLoading(false)
+          }
+        },
+        prefill: {
+          name: `${formData.firstName} ${formData.lastName}`,
           email: formData.email,
-          phone: formData.phone,
-          address: formData.address,
-          city: formData.city,
-          state: formData.state,
-          zipCode: formData.zipCode,
+          contact: formData.phone,
         },
-        paymentInfo: {
-          cardName: formData.cardName,
-          cardNumber: formData.cardNumber,
-          cardExpiry: formData.cardExpiry,
-          cardCVC: formData.cardCVC,
+        theme: {
+          color: "#6366f1",
         },
-        subtotal,
-        shipping,
-        tax,
-        total,
-        couponCode: appliedCoupon?.code || null,
-        discount: discount,
-        status: "Pending" as const,
+        modal: {
+          ondismiss: function () {
+            setLoading(false)
+            setToast({ message: "Payment cancelled", type: "info" })
+          },
+        },
       }
-      const result = await createOrder(orderData)
-      
-      // Mark coupon as used if applied
-      if (appliedCoupon?.code) {
-        try {
-          await useCoupon(appliedCoupon.code)
-        } catch (error) {
-          console.error("Error marking coupon as used:", error)
-        }
-      }
-      
-      setOrderId(result.id)
-      setOrderNumber(result.orderNumber)
-      setOrderPlaced(true)
-      clearCart()
-      setToast({ message: "Order placed successfully!", type: "success" })
+
+      const razorpay = new window.Razorpay(options)
+      razorpay.open()
     } catch (error) {
-      console.error("Error creating order:", error)
-      alert("Failed to place order. Please try again.")
-    } finally {
+      console.error("Error initiating payment:", error)
+      setToast({ message: "Failed to initiate payment. Please try again.", type: "error" })
       setLoading(false)
     }
   }
@@ -378,59 +488,41 @@ function CheckoutContent() {
               >
                 <h2 className="text-2xl font-bold mb-6">Payment Information</h2>
                 <div className="space-y-4">
-                  <input
-                    type="text"
-                    name="cardName"
-                    placeholder="Cardholder Name"
-                    value={formData.cardName}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                  />
-                  <input
-                    type="text"
-                    name="cardNumber"
-                    placeholder="Card Number"
-                    value={formData.cardNumber}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                  />
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <input
-                      type="text"
-                      name="cardExpiry"
-                      placeholder="MM/YY"
-                      value={formData.cardExpiry}
-                      onChange={handleInputChange}
-                      required
-                      className="px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                    />
-                    <input
-                      type="text"
-                      name="cardCVC"
-                      placeholder="CVC"
-                      value={formData.cardCVC}
-                      onChange={handleInputChange}
-                      required
-                      className="px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                    />
+                  <div className="bg-muted/50 border border-border rounded-lg p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center">
+                        <svg className="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">Secure Payment via Razorpay</h3>
+                        <p className="text-sm text-muted-foreground">You will be redirected to Razorpay for secure payment</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <p>✓ Secure payment gateway</p>
+                      <p>✓ Multiple payment options (Cards, UPI, Netbanking, Wallets)</p>
+                      <p>✓ PCI DSS compliant</p>
+                    </div>
                   </div>
                 </div>
               </div>
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !razorpayLoaded}
                 className="w-full bg-accent text-accent-foreground py-4 rounded-lg font-semibold text-lg hover:opacity-90 transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
                     <div className="w-5 h-5 border-2 border-accent-foreground border-t-transparent rounded-full animate-spin" />
-                    Placing Order...
+                    Processing Payment...
                   </>
+                ) : !razorpayLoaded ? (
+                  "Loading Payment Gateway..."
                 ) : (
-                  "Place Order"
+                  "Proceed to Payment"
                 )}
               </button>
             </form>

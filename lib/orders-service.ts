@@ -20,10 +20,16 @@ export type Order = {
     zipCode: string
   }
   paymentInfo: {
-    cardName: string
-    cardNumber: string
-    cardExpiry: string
-    cardCVC: string
+    razorpayOrderId?: string
+    razorpayPaymentId?: string
+    razorpaySignature?: string
+    paymentMethod?: string
+    paymentStatus?: string
+    // Legacy fields for backward compatibility
+    cardName?: string
+    cardNumber?: string
+    cardExpiry?: string
+    cardCVC?: string
   }
   subtotal: number
   shipping: number

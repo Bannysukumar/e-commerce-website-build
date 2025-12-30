@@ -21,8 +21,8 @@ export type AdminSettings = {
   twoFactorAuth: boolean
   passwordMinLength: string
   sessionTimeout: string
-  stripeKey: string
-  paypalEmail: string
+  razorpayKeyId: string
+  razorpayKeySecret: string
   mailerServiceProvider: string
 }
 
@@ -42,8 +42,8 @@ const defaultSettings: AdminSettings = {
   twoFactorAuth: false,
   passwordMinLength: "8",
   sessionTimeout: "30",
-  stripeKey: "sk_test_****",
-  paypalEmail: "business@example.com",
+  razorpayKeyId: "rzp_live_Rxsf6lkhhXIzQr",
+  razorpayKeySecret: "sN8ke5Kuu5ae3vBoMNZWTIMs",
   mailerServiceProvider: "sendgrid",
 }
 
