@@ -16,7 +16,7 @@ import { CartProvider } from "@/lib/cart-context"
 import { Check, ChevronLeft, X } from "lucide-react"
 import { CheckoutProgress } from "@/components/checkout-progress"
 import { CartToast } from "@/components/cart-toast"
-import { RAZORPAY_KEY_ID } from "@/lib/razorpay-service"
+import { RAZORPAY_KEY_ID } from "@/lib/razorpay-config"
 
 declare global {
   interface Window {

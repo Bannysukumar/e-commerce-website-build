@@ -1,7 +1,11 @@
-// Razorpay service configuration
+// Razorpay service configuration - Server-side only
 // Using live keys from rzp-key.csv
-export const RAZORPAY_KEY_ID = "rzp_live_Rxsf6lkhhXIzQr"
+import { RAZORPAY_KEY_ID } from "./razorpay-config"
+
 export const RAZORPAY_KEY_SECRET = "sN8ke5Kuu5ae3vBoMNZWTIMs"
+
+// Re-export for server-side use
+export { RAZORPAY_KEY_ID }
 
 // Razorpay instance (server-side only)
 export function getRazorpayInstance() {
