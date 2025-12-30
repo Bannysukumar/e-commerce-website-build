@@ -52,14 +52,14 @@ export default function TermsAndConditionsClient() {
             <section className="mb-4">
               <p className="text-foreground/90 leading-relaxed mb-4">
                 Cash on Delivery (COD) is NOT available.
-              </p>
-            </section>
+            </p>
+          </section>
 
             <section className="mb-4">
               <p className="text-foreground/90 leading-relaxed mb-4">
                 Only online payments are accepted through secure payment gateways.
-              </p>
-            </section>
+            </p>
+          </section>
 
             <section className="mb-8">
               <p className="text-foreground/90 leading-relaxed">
@@ -70,16 +70,16 @@ export default function TermsAndConditionsClient() {
 
           <div className="border-t border-border pt-8 mt-8">
             <h2 className="text-3xl font-bold mb-6">Contact</h2>
-            
-            <section>
+
+          <section>
               <p className="text-foreground/90 leading-relaxed mb-4">
                 For any support or queries, customers can contact SweBird through the official contact details provided on the website.
-              </p>
-              <div className="mt-4 p-4 bg-muted rounded-lg">
+            </p>
+            <div className="mt-4 p-4 bg-muted rounded-lg">
                 <p className="text-foreground/90 font-semibold mb-2">Owner: Swechha</p>
                 <p className="text-foreground/90 font-semibold">Store Name: SweBird</p>
-              </div>
-            </section>
+            </div>
+          </section>
           </div>
         </div>
       </div>

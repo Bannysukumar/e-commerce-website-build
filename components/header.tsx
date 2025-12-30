@@ -161,20 +161,10 @@ export function Header() {
       {/* Main Navigation Bar */}
       <div className="bg-[#8347A8] text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Top Row: Search (Left), Brand Name (Center), Utility Icons (Right) */}
+          {/* Top Row: Brand Name (Center), Utility Icons (Right) */}
           <div className="flex items-center justify-between py-4">
-            {/* Search Icon - Left (Desktop Only) */}
-            <div className="flex-1 flex items-center hidden md:flex">
-              <button
-                onClick={handleSearchClick}
-                className="hover:opacity-80 transition-opacity text-white"
-                aria-label="Search"
-              >
-                <Search className="w-5 h-5" />
-              </button>
-            </div>
             {/* Brand Name - Centered */}
-            <Link href="/" className="flex-1 flex justify-center items-center gap-3">
+            <Link href="/" className="flex-1 flex justify-center items-center gap-3" style={{ marginLeft: '28px' }}>
               <img 
                 src="/logo.jpg" 
                 alt="swebirdshop" 
@@ -184,6 +174,13 @@ export function Header() {
             </Link>
             {/* Utility Icons - Right */}
             <div className="flex-1 flex items-center justify-end gap-4">
+              <button
+                onClick={handleSearchClick}
+                className="hover:opacity-80 transition-all duration-300 hover:scale-110 active:scale-95 text-white"
+                aria-label="Search"
+              >
+                <Search className="w-5 h-5 transition-transform duration-300" />
+              </button>
               <Link
                 href="/account?tab=wishlist"
                 className="relative hover:opacity-80 transition-all duration-300 hover:scale-110 active:scale-95 text-white"

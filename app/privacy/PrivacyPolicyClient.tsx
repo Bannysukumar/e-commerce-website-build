@@ -39,14 +39,14 @@ export default function PrivacyPolicyClient() {
             
             <section className="mb-8">
               <h3 className="text-2xl font-bold mb-4">About Our Products (Important Disclosure)</h3>
-              <p className="text-foreground/90 leading-relaxed mb-4">
+            <p className="text-foreground/90 leading-relaxed mb-4">
                 SweBird sells fashion and lifestyle products such as gadgets, watches, smart watches, handbags, belts, shoes, and clothing for men and women. All products sold on SweBird are NOT original branded products. These are First Copy / Master Copy / Replica products with different quality grades such as 7A, 5A, etc.
               </p>
-              <p className="text-foreground/90 leading-relaxed">
+            <p className="text-foreground/90 leading-relaxed">
                 We do not claim any product to be original. Customers are requested to purchase only after clearly understanding this point.
-              </p>
+            </p>
             </section>
-          </div>
+            </div>
         </div>
       </div>
     </main>
