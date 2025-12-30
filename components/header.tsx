@@ -7,6 +7,7 @@ import { Menu, X, Search, ShoppingCart, User, Heart, ChevronDown, ChevronRight }
 import { useCart } from "@/lib/cart-context"
 import { useWishlist } from "@/lib/wishlist-context"
 import { getProducts, type Product } from "@/lib/products-service"
+import { subscribeToPromotionalBanners, type PromotionalBanner } from "@/lib/promotional-banners-service"
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -16,6 +17,7 @@ export function Header() {
   const [allProducts, setAllProducts] = useState<Product[]>([])
   const [loadingSearch, setLoadingSearch] = useState(false)
   const [categoryDropdowns, setCategoryDropdowns] = useState<{ [key: string]: boolean }>({})
+  const [promotionalBanners, setPromotionalBanners] = useState<PromotionalBanner[]>([])
   const searchInputRef = useRef<HTMLInputElement>(null)
   const searchModalRef = useRef<HTMLDivElement>(null)
   const { cartCount } = useCart()
@@ -49,6 +51,14 @@ export function Header() {
       setLoadingSearch(false)
     }
     loadProducts()
+  }, [])
+
+  // Load promotional banners
+  useEffect(() => {
+    const unsubscribe = subscribeToPromotionalBanners((banners) => {
+      setPromotionalBanners(banners)
+    })
+    return () => unsubscribe()
   }, [])
 
   // Filter products based on search query
@@ -133,30 +143,28 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 bg-[#8347A8]">
       {/* Top Promotional Bar - Auto Scrolling */}
-      <div className="bg-black text-white py-2 px-4 overflow-hidden relative text-sm font-medium">
-        <div className="flex items-center whitespace-nowrap">
-          <div className="flex items-center gap-8 min-w-max animate-scroll">
-            <span className="text-sm font-medium">GET 10% OFF ON YOUR FIRST ORDER. USE CODE SWEBIRD10.</span>
-            <span className="text-sm font-medium">FREE STANDARD DELIVERY ABOVE RS. 44!</span>
-            <span className="text-sm font-medium">NEW COLLECTION NOW AVAILABLE - SHOP NOW!</span>
-            <span className="text-sm font-medium">UP TO 50% OFF ON SELECTED ITEMS - LIMITED TIME!</span>
-            <span className="text-sm font-medium">GET 10% OFF ON YOUR FIRST ORDER. USE CODE SWEBIRD10.</span>
-            <span className="text-sm font-medium">FREE STANDARD DELIVERY ABOVE RS. 44!</span>
-            <span className="text-sm font-medium">NEW COLLECTION NOW AVAILABLE - SHOP NOW!</span>
-            <span className="text-sm font-medium">UP TO 50% OFF ON SELECTED ITEMS - LIMITED TIME!</span>
-          </div>
-          <div className="flex items-center gap-8 min-w-max animate-scroll" aria-hidden="true">
-            <span className="text-sm font-medium">GET 10% OFF ON YOUR FIRST ORDER. USE CODE SWEBIRD10.</span>
-            <span className="text-sm font-medium">FREE STANDARD DELIVERY ABOVE RS. 44!</span>
-            <span className="text-sm font-medium">NEW COLLECTION NOW AVAILABLE - SHOP NOW!</span>
-            <span className="text-sm font-medium">UP TO 50% OFF ON SELECTED ITEMS - LIMITED TIME!</span>
-            <span className="text-sm font-medium">GET 10% OFF ON YOUR FIRST ORDER. USE CODE SWEBIRD10.</span>
-            <span className="text-sm font-medium">FREE STANDARD DELIVERY ABOVE RS. 44!</span>
-            <span className="text-sm font-medium">NEW COLLECTION NOW AVAILABLE - SHOP NOW!</span>
-            <span className="text-sm font-medium">UP TO 50% OFF ON SELECTED ITEMS - LIMITED TIME!</span>
+      {promotionalBanners.length > 0 && (
+        <div className="bg-black text-white py-2 px-4 overflow-hidden relative text-sm font-medium">
+          <div className="flex items-center whitespace-nowrap">
+            <div className="flex items-center gap-8 min-w-max animate-scroll">
+              {promotionalBanners.map((banner) => (
+                <span key={banner.id} className="text-sm font-medium">{banner.text}</span>
+              ))}
+              {promotionalBanners.map((banner) => (
+                <span key={`duplicate-${banner.id}`} className="text-sm font-medium">{banner.text}</span>
+              ))}
+            </div>
+            <div className="flex items-center gap-8 min-w-max animate-scroll" aria-hidden="true">
+              {promotionalBanners.map((banner) => (
+                <span key={`aria-${banner.id}`} className="text-sm font-medium">{banner.text}</span>
+              ))}
+              {promotionalBanners.map((banner) => (
+                <span key={`aria-duplicate-${banner.id}`} className="text-sm font-medium">{banner.text}</span>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Main Navigation Bar */}
       <div className="bg-[#8347A8] text-white">
