@@ -26,20 +26,42 @@ export default function SignupPage() {
     setLoading(true)
 
     try {
-      if (!name || !email || !password || !confirmPassword) {
-        setError("Please fill in all fields")
+      // Validate all fields are filled
+      const requiredFields = {
+        "Full Name": name.trim(),
+        "Email": email.trim(),
+        "Password": password,
+        "Confirm Password": confirmPassword,
+      }
+      
+      const missingFields = Object.entries(requiredFields)
+        .filter(([_, value]) => !value || value === "")
+        .map(([field]) => field)
+      
+      if (missingFields.length > 0) {
+        setError(`Please fill in all required fields: ${missingFields.join(", ")}`)
         setLoading(false)
         return
       }
 
-      if (password !== confirmPassword) {
-        setError("Passwords do not match")
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(email)) {
+        setError("Please enter a valid email address")
         setLoading(false)
         return
       }
 
+      // Validate password length
       if (password.length < 6) {
         setError("Password must be at least 6 characters")
+        setLoading(false)
+        return
+      }
+
+      // Validate passwords match
+      if (password !== confirmPassword) {
+        setError("Passwords do not match")
         setLoading(false)
         return
       }
@@ -73,6 +95,7 @@ export default function SignupPage() {
             <div className="text-center">
               <h1 className="text-3xl font-bold mb-2">Create Account</h1>
               <p className="text-muted-foreground">Join swebirdshop and start shopping today</p>
+              <p className="text-sm text-muted-foreground mt-2">All fields are required</p>
             </div>
 
             {error && (
@@ -84,7 +107,7 @@ export default function SignupPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium mb-2">
-                  Full Name
+                  Full Name <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -94,6 +117,7 @@ export default function SignupPage() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="John Doe"
+                    required
                     className="w-full pl-10 pr-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                     disabled={loading}
                   />
@@ -102,7 +126,7 @@ export default function SignupPage() {
 
               <div>
                 <label htmlFor="email" className="block text-sm font-medium mb-2">
-                  Email Address
+                  Email Address <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -112,6 +136,7 @@ export default function SignupPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
+                    required
                     className="w-full pl-10 pr-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                     disabled={loading}
                   />
@@ -120,7 +145,8 @@ export default function SignupPage() {
 
               <div>
                 <label htmlFor="password" className="block text-sm font-medium mb-2">
-                  Password
+                  Password <span className="text-red-500">*</span>
+                  <span className="text-xs text-muted-foreground font-normal ml-2">(min. 6 characters)</span>
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -130,6 +156,8 @@ export default function SignupPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
+                    required
+                    minLength={6}
                     className="w-full pl-10 pr-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                     disabled={loading}
                   />
@@ -138,7 +166,7 @@ export default function SignupPage() {
 
               <div>
                 <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2">
-                  Confirm Password
+                  Confirm Password <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -148,6 +176,8 @@ export default function SignupPage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="••••••••"
+                    required
+                    minLength={6}
                     className="w-full pl-10 pr-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                     disabled={loading}
                   />

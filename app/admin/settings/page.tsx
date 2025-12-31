@@ -29,7 +29,7 @@ function AdminSettingsContent() {
     storeEmail: "admin@swebirdshop.com",
     storePhone: "+1 (555) 123-4567",
     storeAddress: "123 Main St, City, State 12345",
-    currency: "USD",
+    currency: "INR",
     taxRate: "8.5",
     shippingCost: "9.99",
     freeShippingThreshold: "50",
@@ -174,6 +174,7 @@ function AdminSettingsContent() {
                       onChange={(e) => handleInputChange("currency", e.target.value)}
                       className="w-full px-4 py-2 border border-border rounded-lg bg-background"
                     >
+                      <option>INR</option>
                       <option>USD</option>
                       <option>EUR</option>
                       <option>GBP</option>

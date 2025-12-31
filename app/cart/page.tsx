@@ -9,6 +9,7 @@ import { useCart } from "@/lib/cart-context"
 import { subscribeToProducts, initializeProducts, type Product } from "@/lib/products-service"
 import { CartProvider } from "@/lib/cart-context"
 import { CartToast } from "@/components/cart-toast"
+import { getAdminSettings, type AdminSettings } from "@/lib/settings-service"
 
 function CartContent() {
   const { items, removeFromCart, updateQuantity } = useCart()
@@ -16,6 +17,7 @@ function CartContent() {
   const [toast, setToast] = useState<{ message: string; type?: "success" | "error" | "info" } | null>(null)
   const [removingItem, setRemovingItem] = useState<string | null>(null)
   const [updatingQuantity, setUpdatingQuantity] = useState<string | null>(null)
+  const [settings, setSettings] = useState<AdminSettings | null>(null)
 
   useEffect(() => {
     initializeProducts().then(() => {
@@ -24,6 +26,11 @@ function CartContent() {
       })
       return () => unsubscribe()
     })
+  }, [])
+
+  // Load admin settings
+  useEffect(() => {
+    getAdminSettings().then(setSettings)
   }, [])
 
   const cartItems = items.map((item) => {
@@ -35,8 +42,15 @@ function CartContent() {
     return total + (item.product?.price || 0) * item.quantity
   }, 0)
 
-  const shipping = subtotal > 0 && subtotal < 100 ? 10 : 0
-  const tax = subtotal * 0.1
+  // Calculate shipping using admin settings
+  const shippingCost = settings ? parseFloat(settings.shippingCost) || 0 : 10
+  const freeShippingThreshold = settings ? parseFloat(settings.freeShippingThreshold) || 0 : 100
+  const shipping = subtotal > 0 && subtotal < freeShippingThreshold ? shippingCost : 0
+
+  // Calculate tax using admin settings
+  const taxRate = settings ? parseFloat(settings.taxRate) || 0 : 10
+  const tax = subtotal * (taxRate / 100)
+
   const total = subtotal + shipping + tax
 
   const handleRemoveItem = async (productId: string) => {

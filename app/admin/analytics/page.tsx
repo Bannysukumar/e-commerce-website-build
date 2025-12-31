@@ -94,7 +94,7 @@ function AnalyticsContent() {
                             style={{ width: `${(item.revenue / maxRevenue) * 100}%` }}
                           >
                             <span className="text-xs font-bold text-accent-foreground">
-                              ${(item.revenue / 1000).toFixed(0)}k
+                              ₹{(item.revenue / 1000).toFixed(0)}k
                             </span>
                           </div>
                         </div>

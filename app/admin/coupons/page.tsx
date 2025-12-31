@@ -217,7 +217,7 @@ function CouponsManagementContent() {
 
                 {formData.discountType === "percentage" && (
                   <div>
-                    <label className="block text-sm font-medium mb-1">Max Discount Amount ($) - Optional</label>
+                    <label className="block text-sm font-medium mb-1">Max Discount Amount (₹) - Optional</label>
                     <input
                       type="number"
                       value={formData.maxDiscountAmount || 0}

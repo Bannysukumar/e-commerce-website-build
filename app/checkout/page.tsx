@@ -17,6 +17,8 @@ import { Check, ChevronLeft, X } from "lucide-react"
 import { CheckoutProgress } from "@/components/checkout-progress"
 import { CartToast } from "@/components/cart-toast"
 import { RAZORPAY_KEY_ID } from "@/lib/razorpay-config"
+import { getAdminSettings, type AdminSettings } from "@/lib/settings-service"
+import { saveShippingInfo, getShippingInfo } from "@/lib/shipping-info-service"
 
 declare global {
   interface Window {
@@ -27,7 +29,7 @@ declare global {
 function CheckoutContent() {
   const router = useRouter()
   const { items, clearCart } = useCart()
-  const { user } = useAuth()
+  const { user, isLoggedIn } = useAuth()
   const [products, setProducts] = useState<any[]>([])
   const [orderPlaced, setOrderPlaced] = useState(false)
   const [orderId, setOrderId] = useState<string>("")
@@ -51,11 +53,70 @@ function CheckoutContent() {
     zipCode: "",
   })
   const [razorpayLoaded, setRazorpayLoaded] = useState(false)
+  const [settings, setSettings] = useState<AdminSettings | null>(null)
+  const [fetchingPincode, setFetchingPincode] = useState(false)
+  const [shippingInfoLoaded, setShippingInfoLoaded] = useState(false)
 
   // Load products
   useEffect(() => {
     getProducts().then(setProducts)
   }, [])
+
+  // Load admin settings
+  useEffect(() => {
+    getAdminSettings().then(setSettings)
+  }, [])
+
+  // Auto-fill user information when logged in (only once on initial load)
+  useEffect(() => {
+    if (isLoggedIn && user && !shippingInfoLoaded) {
+      setShippingInfoLoaded(true)
+      
+      // First, try to load saved shipping info
+      getShippingInfo(user.id).then((savedShippingInfo) => {
+        if (savedShippingInfo) {
+          // Use saved shipping info if available
+          setFormData({
+            firstName: savedShippingInfo.firstName || "",
+            lastName: savedShippingInfo.lastName || "",
+            email: savedShippingInfo.email || "",
+            phone: savedShippingInfo.phone || "",
+            address: savedShippingInfo.address || "",
+            city: savedShippingInfo.city || "",
+            state: savedShippingInfo.state || "",
+            zipCode: savedShippingInfo.zipCode || "",
+          })
+        } else {
+          // If no saved shipping info, use basic user info
+          const nameParts = user.name ? user.name.trim().split(/\s+/) : []
+          setFormData({
+            firstName: nameParts[0] || "",
+            lastName: nameParts.slice(1).join(" ") || "",
+            email: user.email || "",
+            phone: "",
+            address: "",
+            city: "",
+            state: "",
+            zipCode: "",
+          })
+        }
+      }).catch((error) => {
+        console.error("Error loading shipping info:", error)
+        // Fallback to basic user info if loading fails
+        const nameParts = user.name ? user.name.trim().split(/\s+/) : []
+        setFormData({
+          firstName: nameParts[0] || "",
+          lastName: nameParts.slice(1).join(" ") || "",
+          email: user.email || "",
+          phone: "",
+          address: "",
+          city: "",
+          state: "",
+          zipCode: "",
+        })
+      })
+    }
+  }, [isLoggedIn, user, shippingInfoLoaded])
 
   // Load Razorpay script
   useEffect(() => {
@@ -79,13 +140,123 @@ function CheckoutContent() {
     return total + (item.product?.price || 0) * item.quantity
   }, 0)
 
-  const shipping = subtotal > 0 && subtotal < 100 ? 10 : 0
-  const tax = subtotal * 0.1
+  // Calculate shipping using admin settings
+  const shippingCost = settings ? parseFloat(settings.shippingCost) || 0 : 10
+  const freeShippingThreshold = settings ? parseFloat(settings.freeShippingThreshold) || 0 : 100
+  const shipping = subtotal > 0 && subtotal < freeShippingThreshold ? shippingCost : 0
+
+  // Calculate tax using admin settings
+  const taxRate = settings ? parseFloat(settings.taxRate) || 0 : 10
+  const tax = subtotal * (taxRate / 100)
+
   const total = subtotal + shipping + tax - discount
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  // Fetch city and state from PIN code
+  const handlePincodeBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
+    const pincode = e.target.value.trim()
+    
+    // Only fetch if PIN code is 6 digits and city/state are not already filled
+    if (pincode.length === 6 && /^\d{6}$/.test(pincode)) {
+      // Don't fetch if city and state are already filled
+      if (formData.city && formData.state) {
+        return
+      }
+
+      setFetchingPincode(true)
+      
+      try {
+        // Use our API route to avoid CORS issues
+        const response = await fetch(`/api/pincode?pincode=${pincode}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          },
+        })
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          const errorMessage = errorData.error || `HTTP error! status: ${response.status}`
+          console.error("PIN code API error:", errorMessage)
+          
+          // Show user-friendly error message
+          if (response.status === 503) {
+            setToast({ 
+              message: "PIN code service is temporarily unavailable. Please enter city and state manually.", 
+              type: "error" 
+            })
+          } else if (response.status === 504) {
+            setToast({ 
+              message: "Request timed out. Please try again.", 
+              type: "error" 
+            })
+          } else {
+            setToast({ 
+              message: "Could not fetch location data. Please enter city and state manually.", 
+              type: "info" 
+            })
+          }
+          return
+        }
+        
+        const data = await response.json()
+        
+        if (data.PostOffice && Array.isArray(data.PostOffice) && data.PostOffice.length > 0) {
+          // Priority order: Sub Office > Head Post Office > Branch Post Office
+          const branchTypePriority: Record<string, number> = {
+            "Sub Office": 1,
+            "Head Post Office": 2,
+            "Branch Post Office": 3,
+          }
+          
+          // Find the best post office (prefer Sub Office or Head Post Office)
+          const bestPostOffice = data.PostOffice.reduce((best: any, current: any) => {
+            const bestPriority = branchTypePriority[best?.BranchType] || 999
+            const currentPriority = branchTypePriority[current?.BranchType] || 999
+            return currentPriority < bestPriority ? current : best
+          }, data.PostOffice[0])
+          
+          // Use District as city (more accurate than post office name)
+          // Fallback to post office name if District is not available
+          const city = bestPostOffice.District || bestPostOffice.Name || ""
+          const state = bestPostOffice.State || ""
+          
+          setFormData((prev) => ({
+            ...prev,
+            city: city || prev.city,
+            state: state || prev.state,
+          }))
+          
+          if (city && state) {
+            setToast({ 
+              message: `Auto-filled: ${city}, ${state}`, 
+              type: "success" 
+            })
+          }
+        } else {
+          setToast({ 
+            message: "PIN code not found. Please enter city and state manually.", 
+            type: "info" 
+          })
+        }
+      } catch (error: any) {
+        console.error("Error fetching PIN code data:", error)
+        
+        // Show error message to user
+        if (error.name !== 'AbortError') {
+          setToast({ 
+            message: "Network error. Please enter city and state manually.", 
+            type: "error" 
+          })
+        }
+      } finally {
+        setFetchingPincode(false)
+      }
+    }
   }
 
   const handleApplyCoupon = async () => {
@@ -131,9 +302,70 @@ function CheckoutContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Validate shipping information
-    if (!formData.firstName || !formData.email || !formData.phone || !formData.address) {
-      setToast({ message: "Please fill in all required shipping information", type: "error" })
+    // Check if user is logged in
+    if (!isLoggedIn || !user) {
+      setToast({ 
+        message: "Please login to proceed with payment. Redirecting to login page...", 
+        type: "error" 
+      })
+      // Redirect to login page after a short delay
+      setTimeout(() => {
+        router.push("/auth/login?redirect=/checkout")
+      }, 2000)
+      return
+    }
+    
+    // Validate all shipping information fields are filled
+    const requiredFields = {
+      "First Name": formData.firstName,
+      "Last Name": formData.lastName,
+      "Email": formData.email,
+      "Phone Number": formData.phone,
+      "Street Address": formData.address,
+      "PIN Code": formData.zipCode,
+      "City": formData.city,
+      "State": formData.state,
+    }
+    
+    const missingFields = Object.entries(requiredFields)
+      .filter(([_, value]) => !value || value.trim() === "")
+      .map(([field]) => field)
+    
+    if (missingFields.length > 0) {
+      setToast({ 
+        message: `Please fill in all required fields: ${missingFields.join(", ")}`, 
+        type: "error" 
+      })
+      return
+    }
+    
+    // Validate PIN code format
+    if (!/^\d{6}$/.test(formData.zipCode)) {
+      setToast({ 
+        message: "Please enter a valid 6-digit PIN code", 
+        type: "error" 
+      })
+      return
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.email)) {
+      setToast({ 
+        message: "Please enter a valid email address", 
+        type: "error" 
+      })
+      return
+    }
+    
+    // Validate phone number (at least 10 digits)
+    const phoneRegex = /^\d{10,}$/
+    const phoneDigits = formData.phone.replace(/\D/g, "")
+    if (!phoneRegex.test(phoneDigits)) {
+      setToast({ 
+        message: "Please enter a valid phone number (at least 10 digits)", 
+        type: "error" 
+      })
       return
     }
 
@@ -230,6 +462,25 @@ function CheckoutContent() {
             }
 
             const result = await createOrder(orderData)
+
+            // Save shipping information for future use (if user is logged in)
+            if (user?.id) {
+              try {
+                await saveShippingInfo(user.id, {
+                  firstName: formData.firstName,
+                  lastName: formData.lastName,
+                  email: formData.email,
+                  phone: formData.phone,
+                  address: formData.address,
+                  city: formData.city,
+                  state: formData.state,
+                  zipCode: formData.zipCode,
+                })
+              } catch (error) {
+                console.error("Error saving shipping info:", error)
+                // Don't block order completion if saving shipping info fails
+              }
+            }
 
             // Mark coupon as used if applied
             if (appliedCoupon?.code) {
@@ -377,6 +628,31 @@ function CheckoutContent() {
 
         <h1 className="text-4xl font-bold mb-12">Checkout</h1>
 
+        {/* Login Required Banner */}
+        {!isLoggedIn && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                  <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="font-semibold text-yellow-900">Login Required</p>
+                  <p className="text-sm text-yellow-700">You must be logged in to proceed with payment.</p>
+                </div>
+              </div>
+              <Link
+                href="/auth/login?redirect=/checkout"
+                className="bg-yellow-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-yellow-700 transition-colors"
+              >
+                Login Now
+              </Link>
+            </div>
+          </div>
+        )}
+
         <CheckoutProgress currentStep={currentStep} />
 
         {toast && (
@@ -399,79 +675,129 @@ function CheckoutContent() {
                 onFocus={() => setCurrentStep(1)}
               >
                 <h2 className="text-2xl font-bold mb-6">Shipping Information</h2>
+                <p className="text-sm text-muted-foreground mb-6">
+                  All fields are required. Please fill in all details to proceed.
+                </p>
                 <div className="grid md:grid-cols-2 gap-4">
-                  <input
-                    type="text"
-                    name="firstName"
-                    placeholder="First Name"
-                    value={formData.firstName}
-                    onChange={handleInputChange}
-                    required
-                    className="px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                  />
-                  <input
-                    type="text"
-                    name="lastName"
-                    placeholder="Last Name"
-                    value={formData.lastName}
-                    onChange={handleInputChange}
-                    required
-                    className="px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                  />
-                  <input
-                    type="email"
-                    name="email"
-                    placeholder="Email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    required
-                    className="md:col-span-2 px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                  />
-                  <input
-                    type="tel"
-                    name="phone"
-                    placeholder="Phone Number"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    required
-                    className="md:col-span-2 px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                  />
-                  <input
-                    type="text"
-                    name="address"
-                    placeholder="Street Address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    required
-                    className="md:col-span-2 px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                  />
-                  <input
-                    type="text"
-                    name="city"
-                    placeholder="City"
-                    value={formData.city}
-                    onChange={handleInputChange}
-                    required
-                    className="px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                  />
-                  <input
-                    type="text"
-                    name="state"
-                    placeholder="State"
-                    value={formData.state}
-                    onChange={handleInputChange}
-                    required
-                    className="px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                  />
-                  <input
-                    type="text"
-                    name="zipCode"
-                    placeholder="ZIP Code"
-                    value={formData.zipCode}
-                    onChange={handleInputChange}
-                    required
-                    className="px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                  />
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      First Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="firstName"
+                      placeholder="First Name"
+                      value={formData.firstName}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Last Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="lastName"
+                      placeholder="Last Name"
+                      value={formData.lastName}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium mb-2">
+                      Email <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      placeholder="Email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium mb-2">
+                      Phone Number <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      name="phone"
+                      placeholder="Phone Number"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium mb-2">
+                      Street Address <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="address"
+                      placeholder="Street Address"
+                      value={formData.address}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                    />
+                  </div>
+                  <div className="relative">
+                    <label className="block text-sm font-medium mb-2">
+                      PIN Code <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="zipCode"
+                      placeholder="PIN Code (6 digits)"
+                      value={formData.zipCode}
+                      onChange={handleInputChange}
+                      onBlur={handlePincodeBlur}
+                      maxLength={6}
+                      required
+                      className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                    />
+                    {fetchingPincode && (
+                      <div className="absolute right-3 top-10 -translate-y-1/2">
+                        <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      City <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="city"
+                      placeholder="City"
+                      value={formData.city}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      State <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="state"
+                      placeholder="State"
+                      value={formData.state}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -511,10 +837,12 @@ function CheckoutContent() {
 
               <button
                 type="submit"
-                disabled={loading || !razorpayLoaded}
+                disabled={loading || !razorpayLoaded || !isLoggedIn}
                 className="w-full bg-accent text-accent-foreground py-4 rounded-lg font-semibold text-lg hover:opacity-90 transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
               >
-                {loading ? (
+                {!isLoggedIn ? (
+                  "Please Login to Proceed"
+                ) : loading ? (
                   <>
                     <div className="w-5 h-5 border-2 border-accent-foreground border-t-transparent rounded-full animate-spin" />
                     Processing Payment...

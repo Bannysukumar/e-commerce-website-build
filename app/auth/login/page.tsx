@@ -2,21 +2,30 @@
 
 import type React from "react"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { useAuth } from "@/lib/auth-context"
 import { Mail, Lock, ArrowRight } from "lucide-react"
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter()
-  const { login } = useAuth()
+  const searchParams = useSearchParams()
+  const { login, isLoggedIn } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (isLoggedIn) {
+      const redirect = searchParams.get("redirect") || "/account"
+      router.push(redirect)
+    }
+  }, [isLoggedIn, router, searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -31,7 +40,9 @@ export default function LoginPage() {
       }
 
       await login(email, password)
-      router.push("/account")
+      // Redirect to the specified page or default to account
+      const redirect = searchParams.get("redirect") || "/account"
+      router.push(redirect)
     } catch (err: any) {
       let errorMessage = "Login failed. Please try again."
       if (err?.code === "auth/user-not-found") {
@@ -143,5 +154,24 @@ export default function LoginPage() {
 
       <Footer />
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex flex-col">
+        <Header />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   )
 }

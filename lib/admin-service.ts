@@ -56,11 +56,11 @@ export async function getDashboardStats() {
       .map((p) => ({
         name: p.name,
         sales: p.sales,
-        revenue: `$${p.revenue.toFixed(2)}`,
+        revenue: `₹${p.revenue.toFixed(2)}`,
       }))
 
     return {
-      totalSales: `$${totalSales.toFixed(2)}`,
+      totalSales: `₹${totalSales.toFixed(2)}`,
       totalOrders: totalOrders.toString(),
       totalProducts: totalProducts.toString(),
       totalCustomers: totalCustomers.toString(),
@@ -102,7 +102,7 @@ export async function getCustomers() {
         email: userData.email || "",
         phone: userData.phone || "N/A",
         orders: userOrders.length,
-        totalSpent: `$${totalSpent.toFixed(2)}`,
+        totalSpent: `₹${totalSpent.toFixed(2)}`,
         joinDate: userData.createdAt?.toDate().toLocaleDateString() || new Date().toLocaleDateString(),
       }
     })

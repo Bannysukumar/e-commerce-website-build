@@ -10,7 +10,7 @@ import { getProducts, type Product } from "@/lib/products-service"
 import { subscribeToPromotionalBanners, type PromotionalBanner } from "@/lib/promotional-banners-service"
 
 export function Header() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [sidebarMenuOpen, setSidebarMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<Product[]>([])
@@ -169,10 +169,19 @@ export function Header() {
       {/* Main Navigation Bar */}
       <div className="bg-[#8347A8] text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Top Row: Brand Name (Center), Utility Icons (Right) */}
+          {/* Top Row: Hamburger Menu (Left), Brand Name (Center), Utility Icons (Right) */}
           <div className="flex items-center justify-between py-4">
+            {/* Hamburger Menu - Left */}
+            <button
+              onClick={() => setSidebarMenuOpen(!sidebarMenuOpen)}
+              className="p-2 hover:opacity-80 transition-opacity text-white flex-shrink-0"
+              aria-label="Menu"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+            
             {/* Brand Name - Centered */}
-            <Link href="/" className="flex-1 flex justify-center items-center gap-3" style={{ marginLeft: '28px' }}>
+            <Link href="/" className="flex-1 flex justify-center items-center gap-3">
               <img 
                 src="/logo.jpg" 
                 alt="swebirdshop" 
@@ -306,40 +315,54 @@ export function Header() {
               BOYS
             </Link>
           </nav>
-
-            {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center justify-start pb-4 border-t border-white/20 pt-4">
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 hover:opacity-80 transition-opacity text-white"
-            >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-          </div>
         </div>
 
-        {/* Mobile Navigation */}
-        {mobileMenuOpen && (
-          <nav className="md:hidden pb-4 flex flex-col gap-2 border-t border-white/20 pt-4">
-            {categories.map((category) => (
-            <Link
-                key={category.id}
-                href={`/products?category=${category.id}`}
-                className="px-4 py-2 hover:bg-white/10 rounded transition-colors text-sm uppercase tracking-widest font-medium text-white"
-            >
-                {category.name}
-            </Link>
-            ))}
-            {additionalCategories.map((category) => (
-            <Link
-                key={category.id}
-                href={`/products?category=${category.id}`}
-                className="px-4 py-2 hover:bg-white/10 rounded transition-colors text-sm uppercase tracking-widest font-medium text-white"
-            >
-                {category.name}
-            </Link>
-            ))}
-          </nav>
+        {/* Sidebar Menu (Desktop & Mobile) */}
+        {sidebarMenuOpen && (
+          <>
+            {/* Overlay */}
+            <div 
+              className="fixed inset-0 bg-black/50 z-40"
+              onClick={() => setSidebarMenuOpen(false)}
+            />
+            {/* Sidebar */}
+            <div className="fixed left-0 top-0 h-full w-64 bg-[#8347A8] text-white z-50 shadow-2xl overflow-y-auto">
+              <div className="p-4 border-b border-white/20 flex items-center justify-between">
+                <h2 className="text-lg font-bold">Menu</h2>
+                <button
+                  onClick={() => setSidebarMenuOpen(false)}
+                  className="p-2 hover:opacity-80 transition-opacity"
+                  aria-label="Close menu"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <nav className="p-4 space-y-2">
+                {categories.map((category) => (
+                  <div key={category.id} className="relative">
+                    <Link
+                      href={`/products?category=${category.id}`}
+                      className="block px-4 py-3 hover:bg-white/10 rounded transition-colors text-sm uppercase tracking-widest font-medium text-white"
+                      onClick={() => setSidebarMenuOpen(false)}
+                    >
+                      {category.name}
+                    </Link>
+                  </div>
+                ))}
+                {additionalCategories.map((category) => (
+                  <div key={category.id} className="relative">
+                    <Link
+                      href={`/products?category=${category.id}`}
+                      className="block px-4 py-3 hover:bg-white/10 rounded transition-colors text-sm uppercase tracking-widest font-medium text-white"
+                      onClick={() => setSidebarMenuOpen(false)}
+                    >
+                      {category.name}
+                    </Link>
+                  </div>
+                ))}
+              </nav>
+            </div>
+          </>
         )}
 
         {/* Search Modal */}
