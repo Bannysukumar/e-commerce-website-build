@@ -2,8 +2,8 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
@@ -28,6 +28,7 @@ declare global {
 
 function CheckoutContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { items, clearCart } = useCart()
   const { user, isLoggedIn } = useAuth()
   const [products, setProducts] = useState<any[]>([])
@@ -66,6 +67,18 @@ function CheckoutContent() {
   useEffect(() => {
     getAdminSettings().then(setSettings)
   }, [])
+
+  // Check if returning from payment redirect
+  useEffect(() => {
+    const razorpayPaymentId = searchParams.get("razorpay_payment_id")
+    const razorpayOrderId = searchParams.get("razorpay_order_id")
+    const razorpaySignature = searchParams.get("razorpay_signature")
+    
+    // If payment parameters exist in URL, redirect to success page
+    if (razorpayPaymentId && razorpayOrderId && razorpaySignature) {
+      router.replace(`/payment/success?razorpay_payment_id=${razorpayPaymentId}&razorpay_order_id=${razorpayOrderId}&razorpay_signature=${razorpaySignature}`)
+    }
+  }, [searchParams, router])
 
   // Auto-fill user information when logged in (only once on initial load)
   useEffect(() => {
@@ -402,6 +415,32 @@ function CheckoutContent() {
 
       const razorpayOrder = await response.json()
 
+      // Prepare order data to store in sessionStorage (for redirect handling)
+      const orderDataForStorage = {
+        items,
+        shippingInfo: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zipCode,
+        },
+        subtotal,
+        shipping,
+        tax,
+        total,
+        discount: discount,
+      }
+
+      // Store order data in sessionStorage for redirect handling
+      sessionStorage.setItem("pendingOrderData", JSON.stringify(orderDataForStorage))
+      if (appliedCoupon) {
+        sessionStorage.setItem("appliedCoupon", JSON.stringify(appliedCoupon))
+      }
+
       // Initialize Razorpay checkout
       const options = {
         key: RAZORPAY_KEY_ID,
@@ -410,6 +449,8 @@ function CheckoutContent() {
         name: "SweBird",
         description: `Order for ${formData.firstName} ${formData.lastName}`,
         order_id: razorpayOrder.id,
+        // Redirect URLs for mobile payment methods (GPay, PhonePe, etc.)
+        redirect: true,
         handler: async function (response: any) {
           try {
             // Verify payment
@@ -495,10 +536,21 @@ function CheckoutContent() {
             setOrderNumber(result.orderNumber)
             setOrderPlaced(true)
             clearCart()
+            
+            // Clean up session storage after successful payment
+            sessionStorage.removeItem("pendingOrderData")
+            sessionStorage.removeItem("appliedCoupon")
+            
             setToast({ message: "Payment successful! Order placed successfully!", type: "success" })
+            
+            // Redirect to success page with payment details (for consistency)
+            router.push(`/payment/success?razorpay_payment_id=${response.razorpay_payment_id}&razorpay_order_id=${response.razorpay_order_id}&razorpay_signature=${response.razorpay_signature}&status=success`)
           } catch (error) {
             console.error("Error processing payment:", error)
             setToast({ message: "Payment verification failed. Please contact support.", type: "error" })
+            // Clean up session storage on error
+            sessionStorage.removeItem("pendingOrderData")
+            sessionStorage.removeItem("appliedCoupon")
           } finally {
             setLoading(false)
           }
@@ -515,6 +567,9 @@ function CheckoutContent() {
           ondismiss: function () {
             setLoading(false)
             setToast({ message: "Payment cancelled", type: "info" })
+            // Clean up session storage on cancel
+            sessionStorage.removeItem("pendingOrderData")
+            sessionStorage.removeItem("appliedCoupon")
           },
         },
       }
@@ -683,69 +738,69 @@ function CheckoutContent() {
                     <label className="block text-sm font-medium mb-2">
                       First Name <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="text"
-                      name="firstName"
-                      placeholder="First Name"
-                      value={formData.firstName}
-                      onChange={handleInputChange}
-                      required
+                  <input
+                    type="text"
+                    name="firstName"
+                    placeholder="First Name"
+                    value={formData.firstName}
+                    onChange={handleInputChange}
+                    required
                       className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                    />
+                  />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">
                       Last Name <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="text"
-                      name="lastName"
-                      placeholder="Last Name"
-                      value={formData.lastName}
-                      onChange={handleInputChange}
-                      required
+                  <input
+                    type="text"
+                    name="lastName"
+                    placeholder="Last Name"
+                    value={formData.lastName}
+                    onChange={handleInputChange}
+                    required
                       className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                    />
+                  />
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium mb-2">
                       Email <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="email"
-                      name="email"
-                      placeholder="Email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      required
+                  <input
+                    type="email"
+                    name="email"
+                    placeholder="Email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
                       className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                    />
+                  />
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium mb-2">
                       Phone Number <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      placeholder="Phone Number"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      required
+                  <input
+                    type="tel"
+                    name="phone"
+                    placeholder="Phone Number"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    required
                       className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                    />
+                  />
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium mb-2">
                       Street Address <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="text"
-                      name="address"
-                      placeholder="Street Address"
-                      value={formData.address}
-                      onChange={handleInputChange}
-                      required
+                  <input
+                    type="text"
+                    name="address"
+                    placeholder="Street Address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    required
                       className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                     />
                   </div>
@@ -763,7 +818,7 @@ function CheckoutContent() {
                       maxLength={6}
                       required
                       className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                    />
+                  />
                     {fetchingPincode && (
                       <div className="absolute right-3 top-10 -translate-y-1/2">
                         <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
@@ -774,29 +829,29 @@ function CheckoutContent() {
                     <label className="block text-sm font-medium mb-2">
                       City <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="text"
-                      name="city"
-                      placeholder="City"
-                      value={formData.city}
-                      onChange={handleInputChange}
-                      required
+                  <input
+                    type="text"
+                    name="city"
+                    placeholder="City"
+                    value={formData.city}
+                    onChange={handleInputChange}
+                    required
                       className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                    />
+                  />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">
                       State <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="text"
-                      name="state"
-                      placeholder="State"
-                      value={formData.state}
-                      onChange={handleInputChange}
-                      required
+                  <input
+                    type="text"
+                    name="state"
+                    placeholder="State"
+                    value={formData.state}
+                    onChange={handleInputChange}
+                    required
                       className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                    />
+                  />
                   </div>
                 </div>
               </div>
@@ -962,7 +1017,15 @@ function CheckoutContent() {
 export default function CheckoutPage() {
   return (
     <CartProvider>
+      <Suspense fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-muted-foreground">Loading checkout...</p>
+          </div>
+        </div>
+      }>
       <CheckoutContent />
+      </Suspense>
     </CartProvider>
   )
 }

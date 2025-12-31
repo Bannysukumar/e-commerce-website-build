@@ -342,8 +342,8 @@ function AdminSettingsContent() {
                       }}
                       className="px-6 py-2 bg-accent text-accent-foreground rounded-lg hover:opacity-90 font-medium"
                     >
-                      Change Password
-                    </button>
+                  Change Password
+                </button>
                   </div>
                   {user && (
                     <div className="text-sm text-muted-foreground">

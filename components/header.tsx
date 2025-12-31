@@ -144,17 +144,17 @@ export function Header() {
     <header className="sticky top-0 z-50 bg-[#8347A8]">
       {/* Top Promotional Bar - Auto Scrolling */}
       {promotionalBanners.length > 0 && (
-        <div className="bg-black text-white py-2 px-4 overflow-hidden relative text-sm font-medium">
-          <div className="flex items-center whitespace-nowrap">
-            <div className="flex items-center gap-8 min-w-max animate-scroll">
+      <div className="bg-black text-white py-2 px-4 overflow-hidden relative text-sm font-medium">
+        <div className="flex items-center whitespace-nowrap">
+          <div className="flex items-center gap-8 min-w-max animate-scroll">
               {promotionalBanners.map((banner) => (
                 <span key={banner.id} className="text-sm font-medium">{banner.text}</span>
               ))}
               {promotionalBanners.map((banner) => (
                 <span key={`duplicate-${banner.id}`} className="text-sm font-medium">{banner.text}</span>
               ))}
-            </div>
-            <div className="flex items-center gap-8 min-w-max animate-scroll" aria-hidden="true">
+          </div>
+          <div className="flex items-center gap-8 min-w-max animate-scroll" aria-hidden="true">
               {promotionalBanners.map((banner) => (
                 <span key={`aria-${banner.id}`} className="text-sm font-medium">{banner.text}</span>
               ))}
@@ -172,13 +172,13 @@ export function Header() {
           {/* Top Row: Hamburger Menu (Left), Brand Name (Center), Utility Icons (Right) */}
           <div className="flex items-center justify-between py-4">
             {/* Hamburger Menu - Left */}
-            <button
+              <button
               onClick={() => setSidebarMenuOpen(!sidebarMenuOpen)}
               className="p-2 hover:opacity-80 transition-opacity text-white flex-shrink-0"
               aria-label="Menu"
-            >
+              >
               <Menu className="w-6 h-6" />
-            </button>
+              </button>
             
             {/* Brand Name - Centered */}
             <Link href="/" className="flex-1 flex justify-center items-center gap-3">
@@ -329,38 +329,38 @@ export function Header() {
             <div className="fixed left-0 top-0 h-full w-64 bg-[#8347A8] text-white z-50 shadow-2xl overflow-y-auto">
               <div className="p-4 border-b border-white/20 flex items-center justify-between">
                 <h2 className="text-lg font-bold">Menu</h2>
-                <button
+            <button
                   onClick={() => setSidebarMenuOpen(false)}
                   className="p-2 hover:opacity-80 transition-opacity"
                   aria-label="Close menu"
-                >
+            >
                   <X className="w-5 h-5" />
-                </button>
-              </div>
+            </button>
+          </div>
               <nav className="p-4 space-y-2">
-                {categories.map((category) => (
+            {categories.map((category) => (
                   <div key={category.id} className="relative">
-                    <Link
-                      href={`/products?category=${category.id}`}
+            <Link
+                href={`/products?category=${category.id}`}
                       className="block px-4 py-3 hover:bg-white/10 rounded transition-colors text-sm uppercase tracking-widest font-medium text-white"
                       onClick={() => setSidebarMenuOpen(false)}
-                    >
-                      {category.name}
-                    </Link>
+            >
+                {category.name}
+            </Link>
                   </div>
-                ))}
-                {additionalCategories.map((category) => (
+            ))}
+            {additionalCategories.map((category) => (
                   <div key={category.id} className="relative">
-                    <Link
-                      href={`/products?category=${category.id}`}
+            <Link
+                href={`/products?category=${category.id}`}
                       className="block px-4 py-3 hover:bg-white/10 rounded transition-colors text-sm uppercase tracking-widest font-medium text-white"
                       onClick={() => setSidebarMenuOpen(false)}
-                    >
-                      {category.name}
-                    </Link>
+            >
+                {category.name}
+            </Link>
                   </div>
-                ))}
-              </nav>
+            ))}
+          </nav>
             </div>
           </>
         )}
